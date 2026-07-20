@@ -17,5 +17,7 @@
         <property name="hibernate.format_sql">true</property>
 
         <mapping class="org.example.model.User"/>
+        <mapping class="org.example.model.Loan"/>
+        <mapping class="org.example.model.Payment"/>
     </session-factory>
 </hibernate-configuration>
