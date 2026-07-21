@@ -99,6 +99,17 @@
                             <span class="form-hint">Maximum 500 characters</span>
                         </div>
 
+                        <div class="form-group">
+                            <label for="loanType">Type of Loan</label>
+                            <select id="loanType" name="loanType">
+                                <option value="PERSONAL">Personal</option>
+                                <option value="BUSINESS">Business</option>
+                                <option value="EMERGENCY">Emergency</option>
+                                <option value="AGRICULTURE">Agriculture</option>
+                            </select>
+                            <span class="form-hint">Choose the loan type that best matches your purpose</span>
+                        </div>
+
                         <div class="loan-purpose-examples">
                             <div class="purpose-example" onclick="setPurpose('Business expansion and inventory purchase')">🏪 Business expansion</div>
                             <div class="purpose-example" onclick="setPurpose('School fees payment for children')">🎓 School fees</div>
@@ -107,6 +118,47 @@
                             <div class="purpose-example" onclick="setPurpose('Purchase of equipment or machinery')">⚙️ Equipment purchase</div>
                             <div class="purpose-example" onclick="setPurpose('Agricultural inputs and farming')">🌾 Agriculture</div>
                         </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">Repayment & Account</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="accountNumber">Account Number (for bank transfers)</label>
+                            <input type="text" id="accountNumber" name="accountNumber" placeholder="Enter account number (optional)"/>
+                            <span class="form-hint">Used when selecting bank transfer as payment mode</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="repaymentDays">Repayment Period (days)</label>
+                            <input type="number" id="repaymentDays" name="repaymentDays" min="7" max="365" step="1" placeholder="Enter repayment days (e.g., 180)"/>
+                            <span class="form-hint">Number of days over which you'll repay (default 180 days)</span>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="paymentMode">Preferred Payment Mode</label>
+                            <select id="paymentMode" name="paymentMode">
+                                <option value="MPESA">MPESA</option>
+                                <option value="BANK_TRANSFER">Bank transfer</option>
+                                <option value="CARD">Card</option>
+                                <option value="CASH">Cash</option>
+                            </select>
+                            <span class="form-hint">Choose how you prefer to receive/repay the loan</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h2 class="section-title">Loan Rules & Guidance</h2>
+                    <div class="info-box-text" style="background: transparent; padding: 0; border-left: none; color: var(--muted);">
+                        <ul>
+                            <li><strong>Personal:</strong> For household and personal expenses. Interest 10% p.a. Typical term 6 months - 2 years.</li>
+                            <li><strong>Business:</strong> For working capital and inventory. Interest 10% p.a. Term 6 months - 2 years; may require additional verification.</li>
+                            <li><strong>Emergency:</strong> Fast-tracked small loans for urgent needs. Higher fees may apply.</li>
+                            <li><strong>Agriculture:</strong> For seasonal inputs and equipment. Terms may align to planting cycles.</li>
+                        </ul>
+                        <p class="form-hint">These are guidance rules; final terms are set at approval. Make sure purpose and repayment plan are realistic.</p>
                     </div>
                 </div>
 

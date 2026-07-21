@@ -73,7 +73,7 @@
                 </div>
                 <div class="summary-row">
                     <span>Due Date</span>
-                    <span><%= loan.getDueDate() %></span>
+                    <span><%= loan.getDueDateFormatted() != null && !loan.getDueDateFormatted().isEmpty() ? loan.getDueDateFormatted() : "-" %></span>
                 </div>
             </div>
 

@@ -17,6 +17,8 @@ import java.util.List;
 
 @WebServlet("/loans")
 public class LoanServlet extends HttpServlet {
+    private static final java.math.BigDecimal DEFAULT_MAX_LOAN = new java.math.BigDecimal("100000");
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         Long userId = sessionUserId(request);
@@ -98,9 +100,15 @@ public class LoanServlet extends HttpServlet {
 
     private void validateLoanAmount(BigDecimal requested, User member) {
         // Business rule: maximum loan amount is three times the member's current savings balance.
-        // Savings balance tracking will be added in the savings module; for now this enforces structure.
+        // If savings balance is not yet available (placeholder returning zero), fall back to a reasonable default maximum.
         BigDecimal savingsBalance = fetchSavingsBalance(member.getId());
-        BigDecimal maxLoan = savingsBalance == null ? BigDecimal.ZERO : savingsBalance.multiply(new BigDecimal("3"));
+        BigDecimal maxLoan;
+        if (savingsBalance == null || savingsBalance.compareTo(BigDecimal.ZERO) == 0) {
+            // Fallback to a default maximum until the savings module is integrated
+            maxLoan = DEFAULT_MAX_LOAN;
+        } else {
+            maxLoan = savingsBalance.multiply(new BigDecimal("3"));
+        }
         if (requested.compareTo(maxLoan) > 0) {
             throw new IllegalArgumentException("Requested loan exceeds the maximum allowed amount of KES " + maxLoan + ".");
         }

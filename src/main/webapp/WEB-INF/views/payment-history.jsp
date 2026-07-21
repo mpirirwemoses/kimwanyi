@@ -79,11 +79,11 @@
             </div>
             <div class="summary-card">
                 <div class="summary-label">Total Amount Paid</div>
-                <div class="summary-value">KES <%= totalPaid.toLocaleString() %></div>
+                <div class="summary-value">KES <%= java.text.NumberFormat.getNumberInstance().format(totalPaid) %></div>
             </div>
             <div class="summary-card">
                 <div class="summary-label">Average Payment</div>
-                <div class="summary-value">KES <%= paymentCount > 0 ? totalPaid.divide(new BigDecimal(paymentCount), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO %></div>
+                <div class="summary-value">KES <%= java.text.NumberFormat.getNumberInstance().format(paymentCount > 0 ? totalPaid.divide(new BigDecimal(paymentCount), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO) %></div>
             </div>
         </div>
 
@@ -118,19 +118,23 @@
                             <%
                                 SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd, yyyy");
                                 for (Payment payment : payments) {
+                                    PaymentMethod pm = payment.getPaymentMethod();
                                     String methodClass = "method-mpesa";
                                     String methodIcon = "📱";
-                                    if (payment.getPaymentMethod() == PaymentMethod.CARD) { methodClass = "method-card"; methodIcon = "💳"; }
-                                    else if (payment.getPaymentMethod() == PaymentMethod.BANK_TRANSFER) { methodClass = "method-bank"; methodIcon = "🏦"; }
-                                    else if (payment.getPaymentMethod() == PaymentMethod.CASH) { methodClass = "method-cash"; methodIcon = "💵"; }
+                                    String methodLabel = "-";
+                                    if (pm == null) { methodClass = ""; methodIcon = ""; methodLabel = "-"; }
+                                    else if (pm == PaymentMethod.CARD) { methodClass = "method-card"; methodIcon = "💳"; methodLabel = pm.name(); }
+                                    else if (pm == PaymentMethod.BANK_TRANSFER) { methodClass = "method-bank"; methodIcon = "🏦"; methodLabel = pm.name(); }
+                                    else if (pm == PaymentMethod.CASH) { methodClass = "method-cash"; methodIcon = "💵"; methodLabel = pm.name(); }
+                                    else { methodLabel = pm.name(); }
                             %>
                                 <tr>
-                                    <td class="date"><%= dateFormat.format(java.sql.Timestamp.valueOf(payment.getPaymentDate())) %></td>
+                                    <td class="date"><%= payment.getPaymentDate() != null ? payment.getPaymentDateFormatted() : "-" %></td>
                                     <td class="txn-id"><%= payment.getTransactionId() %></td>
-                                    <td><%= payment.getLoan().getLoanReference() %></td>
+                                    <td><%= payment.getLoan() != null ? payment.getLoan().getLoanReference() : "-" %></td>
                                     <td>
                                         <span class="method-badge <%= methodClass %>">
-                                            <%= methodIcon %> <%= payment.getPaymentMethod() %>
+                                            <%= methodIcon %> <%= methodLabel %>
                                         </span>
                                     </td>
                                     <td class="amount">KES <%= payment.getAmount() %></td>

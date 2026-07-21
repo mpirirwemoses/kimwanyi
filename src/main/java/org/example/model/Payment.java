@@ -32,7 +32,7 @@ public class Payment {
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal amount;
 
-    @Enumerated(EnumType.STRING)
+    @jakarta.persistence.Convert(converter = PaymentMethodConverter.class)
     @Column(nullable = false, length = 20)
     private PaymentMethod paymentMethod;
 
@@ -71,6 +71,10 @@ public class Payment {
     public String getCardLastFour() { return cardLastFour; }
     public String getTransactionId() { return transactionId; }
     public LocalDateTime getPaymentDate() { return paymentDate; }
+
+    public String getPaymentDateFormatted() {
+        return paymentDate == null ? "" : paymentDate.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"));
+    }
     public String getNotes() { return notes; }
 
     public void setCardLastFour(String cardLastFour) { this.cardLastFour = cardLastFour; }

@@ -102,7 +102,7 @@
                             <div class="loan-meta">
                                 <div>Requested amount: <strong>KES <%= loan.getRequestedAmount() %></strong></div>
                                 <div>Purpose: <strong><%= loan.getPurpose() %></strong></div>
-                                <div>Applied on: <strong><%= loan.getAppliedAt() %></strong></div>
+                                <div>Applied on: <strong><%= loan.getAppliedAtFormatted() %></strong></div>
                                 <% if (loan.getTotalRepayable() != null) { %>
                                     <div>Total repayable: <strong>KES <%= loan.getTotalRepayable() %></strong></div>
                                 <% } %>

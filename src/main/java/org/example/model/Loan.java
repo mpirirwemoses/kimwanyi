@@ -15,6 +15,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 
 @Entity
 @Table(name = "loans")
@@ -56,6 +57,7 @@ public class Loan {
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
+    @org.hibernate.annotations.ColumnDefault("'MPESA'")
     private PaymentMethod paymentMode = PaymentMethod.MPESA;
 
     private LocalDateTime dueDate;
@@ -76,7 +78,7 @@ public class Loan {
     }
 
     @PrePersist
-    private void beforeInsert() { appliedAt = LocalDateTime.now(); }
+    private void beforeInsert() { appliedAt = LocalDateTime.now().truncatedTo(ChronoUnit.MINUTES); }
 
     public void updateApplication(BigDecimal amount, String newPurpose) {
         if (status != LoanStatus.PENDING) throw new IllegalStateException("Only pending applications can be changed.");
@@ -127,7 +129,15 @@ public class Loan {
     public LocalDateTime getAppliedAt() { return appliedAt; }
 
     public String getAppliedAtFormatted() {
-        return appliedAt == null ? "" : appliedAt.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+        return appliedAt == null || appliedAt.getYear() < 1970 ? "" : appliedAt.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"));
+    }
+
+    public String getReviewedAtFormatted() {
+        return reviewedAt == null || reviewedAt.getYear() < 1970 ? "" : reviewedAt.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"));
+    }
+
+    public String getDueDateFormatted() {
+        return dueDate == null || dueDate.getYear() < 1970 ? "" : dueDate.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"));
     }
     public LocalDateTime getReviewedAt() { return reviewedAt; }
     public User getReviewedBy() { return reviewedBy; }

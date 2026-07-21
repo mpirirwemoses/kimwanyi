@@ -106,7 +106,7 @@
                                 <div>Member: <strong><%= loan.getMember().getFullName() %> (<%= loan.getMember().getEmail() %>)</strong></div>
                                 <div>Requested amount: <strong>KES <%= loan.getRequestedAmount() %></strong></div>
                                 <div>Purpose: <strong><%= loan.getPurpose() %></strong></div>
-                                <div>Applied on: <strong><%= loan.getAppliedAt() %></strong></div>
+                                <div>Applied on: <strong><%= loan.getAppliedAtFormatted() %></strong></div>
                                 <% if (loan.getTotalRepayable() != null) { %>
                                     <div>Total repayable: <strong>KES <%= loan.getTotalRepayable() %></strong></div>
                                 <% } %>
