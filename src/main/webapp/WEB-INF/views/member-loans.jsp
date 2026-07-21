@@ -125,6 +125,9 @@
                                 <% if (canRepay) { %>
                                     <a href="<%= request.getContextPath() %>/payments?action=form&loanId=<%= loan.getId() %>" class="button">Make Payment</a>
                                 <% } %>
+                                <% if (loan.getStatus() == LoanStatus.APPROVED) { %>
+                                    <button type="button" class="button secondary" onclick="openInterestModal(<%= loan.getId() %>)">Calculate Interest</button>
+                                <% } %>
                             </div>
                         </div>
                         <%
@@ -196,11 +199,46 @@
     </div>
 </div>
 
+<!-- Interest Calculation Modal -->
+<div class="modal-overlay" id="interestModal">
+    <div class="modal">
+        <h2>Calculate Interest</h2>
+        <form method="post" action="<%= request.getContextPath() %>/loans">
+            <input type="hidden" name="action" value="calculateInterest"/>
+            <input type="hidden" name="loanId" id="interestLoanId"/>
+            <label for="periodType">Calculation Period</label>
+            <select id="periodType" name="periodType" required>
+                <option value="MONTHLY">Monthly</option>
+                <option value="WEEKLY">Weekly</option>
+            </select>
+            <div class="modal-actions">
+                <button type="button" class="button secondary" onclick="closeModal('interestModal')">Close</button>
+                <button type="submit" class="button">Calculate</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Calculation Result Modal -->
+<div class="modal-overlay" id="resultModal">
+    <div class="modal" style="width: min(100%, 700px);">
+        <h2>Interest Calculation Result</h2>
+        <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 12px 0; max-height: 400px; overflow-y: auto;">
+            <pre id="calculationProcedure" style="white-space: pre-wrap; font-family: monospace; font-size: .85rem; line-height: 1.5;"></pre>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="button secondary" onclick="closeModal('resultModal')">Close</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const applyBtn = document.getElementById('applyBtn');
     const applyModal = document.getElementById('applyModal');
     const updateModal = document.getElementById('updateModal');
     const repayModal = document.getElementById('repayModal');
+    const interestModal = document.getElementById('interestModal');
+    const resultModal = document.getElementById('resultModal');
 
     applyBtn.addEventListener('click', () => openModal('applyModal'));
 
@@ -224,6 +262,22 @@
         document.getElementById('repayAmount').value = '';
         openModal('repayModal');
     }
+
+    function openInterestModal(loanId) {
+        document.getElementById('interestLoanId').value = loanId;
+        openModal('interestModal');
+    }
+
+    <% 
+        String calculationProcedure = (String) request.getAttribute("calculationProcedure"); 
+        if (calculationProcedure != null) {
+            request.removeAttribute("calculationProcedure");
+    %>
+        window.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('calculationProcedure').textContent = '<%= escapeJs(calculationProcedure) %>';
+            openModal('resultModal');
+        });
+    <% } %>
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(overlay.id); });

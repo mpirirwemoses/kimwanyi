@@ -68,6 +68,15 @@ public class Loan {
     @Column(precision = 14, scale = 2)
     private BigDecimal outstandingBalance;
 
+    @Column(length = 10)
+    @org.hibernate.annotations.ColumnDefault("'MONTHLY'")
+    private String interestCalculationPeriod = "MONTHLY";
+
+    @Column(precision = 14, scale = 2)
+    private BigDecimal lastInterestCalculated;
+
+    private LocalDateTime lastInterestCalculationDate;
+
     protected Loan() { }
 
     public Loan(User member, BigDecimal requestedAmount, String purpose) {
@@ -152,4 +161,10 @@ public class Loan {
     public void setTotalRepayable(BigDecimal totalRepayable) { this.totalRepayable = totalRepayable; }
     public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
     public void setLoanReference(String loanReference) { this.loanReference = loanReference; }
+    public String getInterestCalculationPeriod() { return interestCalculationPeriod; }
+    public void setInterestCalculationPeriod(String interestCalculationPeriod) { this.interestCalculationPeriod = interestCalculationPeriod; }
+    public BigDecimal getLastInterestCalculated() { return lastInterestCalculated; }
+    public void setLastInterestCalculated(BigDecimal lastInterestCalculated) { this.lastInterestCalculated = lastInterestCalculated; }
+    public LocalDateTime getLastInterestCalculationDate() { return lastInterestCalculationDate; }
+    public void setLastInterestCalculationDate(LocalDateTime lastInterestCalculationDate) { this.lastInterestCalculationDate = lastInterestCalculationDate; }
 }

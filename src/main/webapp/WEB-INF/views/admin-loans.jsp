@@ -2,6 +2,18 @@
 <%@ page import="org.example.model.Loan" %>
 <%@ page import="org.example.model.LoanStatus" %>
 <%@ page import="java.math.BigDecimal" %>
+<%!
+    public static String escapeJs(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replace("\\", "\\\\")
+                   .replace("'", "\\'")
+                   .replace("\"", "\\\"")
+                   .replace("\n", "\\n")
+                   .replace("\r", "");
+    }
+%>
 <!doctype html>
 <html lang="en">
 <head>
@@ -122,6 +134,9 @@
                                     <button type="button" class="button" data-action="approve" data-loan-id="<%= loan.getId() %>">Approve</button>
                                     <button type="button" class="button secondary" data-action="reject" data-loan-id="<%= loan.getId() %>">Reject</button>
                                 <% } %>
+                                <% if (loan.getStatus() == LoanStatus.APPROVED) { %>
+                                    <button type="button" class="button secondary" onclick="openInterestModal(<%= loan.getId() %>)">Calculate Interest</button>
+                                <% } %>
                             </div>
                         </div>
                         <%
@@ -150,6 +165,39 @@
                 <button type="submit" class="button" id="actionSubmit">Submit</button>
             </div>
         </form>
+    </div>
+</div>
+
+<!-- Interest Calculation Modal -->
+<div class="modal-overlay" id="interestModal">
+    <div class="modal">
+        <h2>Calculate Interest</h2>
+        <form method="post" action="<%= request.getContextPath() %>/loans">
+            <input type="hidden" name="action" value="calculateInterest"/>
+            <input type="hidden" name="loanId" id="interestLoanId"/>
+            <label for="periodType">Calculation Period</label>
+            <select id="periodType" name="periodType" required>
+                <option value="MONTHLY">Monthly</option>
+                <option value="WEEKLY">Weekly</option>
+            </select>
+            <div class="modal-actions">
+                <button type="button" class="button secondary" onclick="closeModal('interestModal')">Close</button>
+                <button type="submit" class="button">Calculate</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Calculation Result Modal -->
+<div class="modal-overlay" id="resultModal">
+    <div class="modal" style="width: min(100%, 700px);">
+        <h2>Interest Calculation Result</h2>
+        <div style="background: #f8f9fa; padding: 16px; border-radius: 8px; margin: 12px 0; max-height: 400px; overflow-y: auto;">
+            <pre id="calculationProcedure" style="white-space: pre-wrap; font-family: monospace; font-size: .85rem; line-height: 1.5;"></pre>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="button secondary" onclick="closeModal('resultModal')">Close</button>
+        </div>
     </div>
 </div>
 
@@ -189,6 +237,11 @@
             const matchesSearch = !search || cardSearch.includes(search);
             card.style.display = matchesStatus && matchesSearch ? '' : 'none';
         });
+    }
+
+    function openInterestModal(loanId) {
+        document.getElementById('interestLoanId').value = loanId;
+        openModal('interestModal');
     }
 
     document.querySelectorAll('.modal-overlay').forEach(overlay => {

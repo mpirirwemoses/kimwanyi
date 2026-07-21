@@ -9,6 +9,8 @@ import org.example.config.HibernateUtil;
 import org.example.model.Loan;
 import org.example.model.LoanStatus;
 import org.example.model.Payment;
+import org.example.model.SavingsAccount;
+import org.example.model.SavingsStatus;
 import org.example.model.User;
 import org.hibernate.Session;
 import org.hibernate.query.Query;
@@ -31,63 +33,109 @@ public class DashboardApiServlet extends HttpServlet {
         
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             User user = session.find(User.class, userId);
+            boolean isAdmin = "ADMIN".equals(request.getSession(false).getAttribute("userRole"));
             
-            // Get all loans for the user
-            List<Loan> loans = session.createQuery(
-                "from Loan where member.id = :memberId order by appliedAt desc", Loan.class)
-                .setParameter("memberId", userId)
-                .list();
-            
-            // Calculate statistics
-            int activeLoans = 0;
-            BigDecimal totalOutstanding = BigDecimal.ZERO;
-            BigDecimal totalRepaid = BigDecimal.ZERO;
-            LocalDateTime nextDue = null;
-            
-            for (Loan loan : loans) {
-                if (loan.getStatus() == LoanStatus.APPROVED) {
-                    activeLoans++;
-                    if (loan.getOutstandingBalance() != null) {
-                        totalOutstanding = totalOutstanding.add(loan.getOutstandingBalance());
-                    }
-                    if (loan.getDueDate() != null && (nextDue == null || loan.getDueDate().isBefore(nextDue))) {
-                        nextDue = loan.getDueDate();
-                    }
-                } else if (loan.getStatus() == LoanStatus.REPAID) {
-                    if (loan.getTotalRepayable() != null) {
-                        totalRepaid = totalRepaid.add(loan.getTotalRepayable());
+            if (isAdmin) {
+                // Admin dashboard data
+                Long totalMembers = session.createQuery("select count(u) from User u where u.role = :role", Long.class)
+                    .setParameter("role", org.example.model.UserRole.MEMBER)
+                    .uniqueResult();
+                if (totalMembers == null) totalMembers = 0L;
+                
+                Long totalLoans = session.createQuery("select count(l) from Loan l where l.status in :statuses", Long.class)
+                    .setParameter("statuses", List.of(LoanStatus.PENDING, LoanStatus.APPROVED, LoanStatus.OVERDUE))
+                    .uniqueResult();
+                if (totalLoans == null) totalLoans = 0L;
+                
+                BigDecimal totalSavings = session.createQuery(
+                    "select sum(sa.balance) from SavingsAccount sa where sa.status = :status", BigDecimal.class)
+                    .setParameter("status", SavingsStatus.ACTIVE)
+                    .uniqueResult();
+                if (totalSavings == null) totalSavings = BigDecimal.ZERO;
+                
+                Long pendingLoans = session.createQuery("select count(l) from Loan l where l.status = :status", Long.class)
+                    .setParameter("status", LoanStatus.PENDING)
+                    .uniqueResult();
+                if (pendingLoans == null) pendingLoans = 0L;
+                
+                // Build JSON response for admin
+                StringBuilder json = new StringBuilder();
+                json.append("{");
+                json.append("\"totalMembers\":").append(totalMembers).append(",");
+                json.append("\"totalLoans\":").append(totalLoans).append(",");
+                json.append("\"totalSavings\":").append(totalSavings).append(",");
+                json.append("\"pendingLoans\":").append(pendingLoans);
+                json.append("}");
+                
+                response.getWriter().write(json.toString());
+            } else {
+                // Member dashboard data
+                List<Loan> loans = session.createQuery(
+                    "from Loan where member.id = :memberId order by appliedAt desc", Loan.class)
+                    .setParameter("memberId", userId)
+                    .list();
+                
+                // Calculate statistics
+                int activeLoans = 0;
+                BigDecimal totalOutstanding = BigDecimal.ZERO;
+                BigDecimal totalRepaid = BigDecimal.ZERO;
+                LocalDateTime nextDue = null;
+                
+                for (Loan loan : loans) {
+                    if (loan.getStatus() == LoanStatus.APPROVED) {
+                        activeLoans++;
+                        if (loan.getOutstandingBalance() != null) {
+                            totalOutstanding = totalOutstanding.add(loan.getOutstandingBalance());
+                        }
+                        if (loan.getDueDate() != null && (nextDue == null || loan.getDueDate().isBefore(nextDue))) {
+                            nextDue = loan.getDueDate();
+                        }
+                    } else if (loan.getStatus() == LoanStatus.REPAID) {
+                        if (loan.getTotalRepayable() != null) {
+                            totalRepaid = totalRepaid.add(loan.getTotalRepayable());
+                        }
                     }
                 }
-            }
-            
-            // Get recent loans (last 5)
-            List<Loan> recentLoans = loans.subList(0, Math.min(5, loans.size()));
-            
-            // Build JSON response
-            StringBuilder json = new StringBuilder();
-            json.append("{");
-            json.append("\"activeLoans\":").append(activeLoans).append(",");
-            json.append("\"totalOutstanding\":").append(totalOutstanding).append(",");
-            json.append("\"totalRepaid\":").append(totalRepaid).append(",");
-            json.append("\"nextDue\":\"").append(nextDue != null ? nextDue.toString() : "").append("\",");
-            json.append("\"recentLoans\":[");
-            
-            for (int i = 0; i < recentLoans.size(); i++) {
-                Loan loan = recentLoans.get(i);
-                if (i > 0) json.append(",");
+                
+                // Get savings data
+                SavingsAccount savingsAccount = session.createQuery(
+                    "select sa from SavingsAccount sa where sa.member.id = :memberId", 
+                    SavingsAccount.class)
+                    .setParameter("memberId", userId)
+                    .uniqueResult();
+                
+                BigDecimal savingsBalance = savingsAccount != null ? savingsAccount.getBalance() : BigDecimal.ZERO;
+                
+                // Get recent loans (last 5)
+                List<Loan> recentLoans = loans.subList(0, Math.min(5, loans.size()));
+                
+                // Build JSON response for member
+                StringBuilder json = new StringBuilder();
                 json.append("{");
-                json.append("\"id\":").append(loan.getId()).append(",");
-                json.append("\"purpose\":\"").append(escapeJson(loan.getPurpose())).append("\",");
-                json.append("\"amount\":").append(loan.getRequestedAmount()).append(",");
-                json.append("\"status\":\"").append(loan.getStatus()).append("\",");
-                json.append("\"appliedAt\":\"").append(loan.getAppliedAt().toString()).append("\"");
+                json.append("\"activeLoans\":").append(activeLoans).append(",");
+                json.append("\"totalOutstanding\":").append(totalOutstanding).append(",");
+                json.append("\"totalRepaid\":").append(totalRepaid).append(",");
+                json.append("\"savingsBalance\":").append(savingsBalance).append(",");
+                json.append("\"nextDue\":\"").append(nextDue != null ? nextDue.toString() : "").append("\",");
+                json.append("\"recentLoans\":[");
+                
+                for (int i = 0; i < recentLoans.size(); i++) {
+                    Loan loan = recentLoans.get(i);
+                    if (i > 0) json.append(",");
+                    json.append("{");
+                    json.append("\"id\":").append(loan.getId()).append(",");
+                    json.append("\"purpose\":\"").append(escapeJson(loan.getPurpose())).append("\",");
+                    json.append("\"amount\":").append(loan.getRequestedAmount()).append(",");
+                    json.append("\"status\":\"").append(loan.getStatus()).append("\",");
+                    json.append("\"appliedAt\":\"").append(loan.getAppliedAt().toString()).append("\"");
+                    json.append("}");
+                }
+                
+                json.append("]");
                 json.append("}");
+                
+                response.getWriter().write(json.toString());
             }
-            
-            json.append("]");
-            json.append("}");
-            
-            response.getWriter().write(json.toString());
         }
     }
     

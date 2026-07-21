@@ -21,5 +21,7 @@
         <mapping class="org.example.model.User"/>
         <mapping class="org.example.model.Loan"/>
         <mapping class="org.example.model.Payment"/>
+        <mapping class="org.example.model.SavingsAccount"/>
+        <mapping class="org.example.model.SavingsTransaction"/>
     </session-factory>
 </hibernate-configuration>
