@@ -93,4 +93,14 @@ public class User {
     public AccountStatus getStatus() { return status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public void setEmail(String email) { this.email = email; }
+    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }
+    public void setNationalId(String nationalId) { this.nationalId = nationalId; }
+    public void setPhysicalAddress(String physicalAddress) { this.physicalAddress = physicalAddress; }
+    public void setRole(UserRole role) { this.role = role; }
+    public void setMembershipNumber(String membershipNumber) { this.membershipNumber = membershipNumber; }
+    public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+    public void setStatus(AccountStatus status) { this.status = status; }
 }

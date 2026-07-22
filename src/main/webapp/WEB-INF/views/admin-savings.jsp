@@ -136,8 +136,8 @@
                                 <td>${account.createdAtFormatted}</td>
                                 <td>
                                     <div class="action-buttons">
-                                        <a href="${pageContext.request.contextPath}/savings?action=statement&accountId=${account.id}" class="btn btn-sm btn-success" target="_blank">View</a>
-                                        <button onclick="openRateModal(${account.id}, ${account.interestRate})" class="btn btn-sm btn-warning">Rate</button>
+                                        <a href="${pageContext.request.contextPath}/admin-dashboard?section=accounts&action=view&id=${account.id}" class="btn btn-sm btn-success">View</a>
+                                        <button onclick="openRateModal(${account.id}, ${account.interestRate})" class="btn btn-sm btn-warning">Update Rate</button>
                                         <c:if test="${account.status == 'ACTIVE'}">
                                             <button onclick="closeAccount(${account.id})" class="btn btn-sm btn-danger">Close</button>
                                         </c:if>

@@ -137,6 +137,7 @@
                                 <% if (loan.getStatus() == LoanStatus.APPROVED) { %>
                                     <button type="button" class="button secondary" onclick="openInterestModal(<%= loan.getId() %>)">Calculate Interest</button>
                                 <% } %>
+                                <a href="<%= request.getContextPath() %>/admin-dashboard?section=loans&action=view&id=<%= loan.getId() %>" class="button secondary">View Details</a>
                             </div>
                         </div>
                         <%

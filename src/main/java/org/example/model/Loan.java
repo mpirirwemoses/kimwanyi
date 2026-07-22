@@ -148,6 +148,10 @@ public class Loan {
     public String getDueDateFormatted() {
         return dueDate == null || dueDate.getYear() < 1970 ? "" : dueDate.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm"));
     }
+    public long getDaysOverdue() {
+        if (dueDate == null || status != LoanStatus.APPROVED && status != LoanStatus.OVERDUE) return 0;
+        return java.time.temporal.ChronoUnit.DAYS.between(dueDate, java.time.LocalDateTime.now());
+    }
     public LocalDateTime getReviewedAt() { return reviewedAt; }
     public User getReviewedBy() { return reviewedBy; }
     public String getReviewComment() { return reviewComment; }
@@ -167,4 +171,5 @@ public class Loan {
     public void setLastInterestCalculated(BigDecimal lastInterestCalculated) { this.lastInterestCalculated = lastInterestCalculated; }
     public LocalDateTime getLastInterestCalculationDate() { return lastInterestCalculationDate; }
     public void setLastInterestCalculationDate(LocalDateTime lastInterestCalculationDate) { this.lastInterestCalculationDate = lastInterestCalculationDate; }
+    public void setStatus(LoanStatus status) { this.status = status; }
 }

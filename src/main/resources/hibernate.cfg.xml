@@ -23,5 +23,7 @@
         <mapping class="org.example.model.Payment"/>
         <mapping class="org.example.model.SavingsAccount"/>
         <mapping class="org.example.model.SavingsTransaction"/>
+        <mapping class="org.example.model.Notification"/>
+        <mapping class="org.example.model.AuditLog"/>
     </session-factory>
 </hibernate-configuration>

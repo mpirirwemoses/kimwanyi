@@ -60,7 +60,14 @@ public class AuthServlet extends HttpServlet {
             request.getSession().setAttribute("userRole", role.name());
             request.getSession().setAttribute("userId", user.getId());
         }
-        response.sendRedirect(request.getContextPath() + "/dashboard");
+        
+        // Redirect based on user role
+        String userRole = (String) request.getSession(false).getAttribute("userRole");
+        if ("ADMIN".equals(userRole)) {
+            response.sendRedirect(request.getContextPath() + "/admin-dashboard");
+        } else {
+            response.sendRedirect(request.getContextPath() + "/dashboard");
+        }
     }
 
     private String value(HttpServletRequest request, String name) {

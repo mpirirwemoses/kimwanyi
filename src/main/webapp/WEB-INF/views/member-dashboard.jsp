@@ -5,201 +5,263 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Member Dashboard | Credit SACCO</title>
-    <link rel="stylesheet" href="<%= request.getContextPath() %>/assets/styles.css">
+    <title>Member Dashboard | Kimwanyi SACCO</title>
     <style>
-        .dashboard-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
-        .sidebar { background: #fff; border-right: 1px solid var(--line); padding: 24px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
-        .sidebar-brand { padding: 0 24px 24px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
-        .sidebar-brand a { color: var(--ink); font-size: 1.1rem; font-weight: 800; text-decoration: none; }
-        .nav-section { padding: 0 12px; margin-bottom: 24px; }
-        .nav-section-title { padding: 0 12px 8px; color: var(--muted); font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
-        .nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 8px; color: var(--ink); text-decoration: none; font-size: .92rem; font-weight: 600; margin-bottom: 4px; transition: background .15s; }
-        .nav-item:hover { background: var(--background); }
-        .nav-item.active { background: #e8f5ed; color: var(--primary); }
-        .nav-icon { width: 20px; height: 20px; flex-shrink: 0; }
-        .main-content { padding: 32px; overflow-y: auto; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 32px; }
-        .stat-card { background: #fff; padding: 24px; border-radius: 14px; border: 1px solid var(--line); }
-        .stat-label { color: var(--muted); font-size: .85rem; font-weight: 700; margin-bottom: 8px; }
-        .stat-value { font-size: 1.75rem; font-weight: 800; color: var(--ink); margin-bottom: 4px; }
-        .stat-change { font-size: .82rem; color: var(--muted); }
-        .section-card { background: #fff; padding: 28px; border-radius: 14px; border: 1px solid var(--line); margin-bottom: 24px; }
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        .section-title { font-size: 1.15rem; font-weight: 700; margin: 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f5f5f5; display: flex; min-height: 100vh; }
+
+        /* Sidebar Styles */
+        .sidebar { width: 260px; background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%); color: white; padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto; }
+        .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h2 { font-size: 20px; color: white; }
+        .sidebar-header p { font-size: 12px; color: #95a5a6; margin-top: 5px; }
+        .nav-menu { list-style: none; }
+        .nav-item { margin-bottom: 5px; }
+        .nav-link { display: flex; align-items: center; padding: 12px 20px; color: #ecf0f1; text-decoration: none; transition: all 0.3s; cursor: pointer; }
+        .nav-link:hover, .nav-link.active { background: rgba(255,255,255,0.1); color: white; border-left: 3px solid #3498db; }
+        .nav-link .icon { margin-right: 10px; font-size: 18px; }
+        .nav-section { padding: 15px 20px 5px; font-size: 11px; text-transform: uppercase; color: #95a5a6; font-weight: bold; letter-spacing: 1px; }
+
+        /* Main Content */
+        .main-content { flex: 1; margin-left: 260px; padding: 30px; overflow-y: auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .page-header h1 { color: #2c3e50; font-size: 28px; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+        .user-info span { color: #555; }
+        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; }
+        .btn-logout:hover { background: #c0392b; }
+
+        /* Stats Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); border-left: 4px solid #3498db; }
+        .stat-card.warning { border-left-color: #f39c12; }
+        .stat-card.danger { border-left-color: #e74c3c; }
+        .stat-card.success { border-left-color: #27ae60; }
+        .stat-card.info { border-left-color: #17a2b8; }
+        .stat-label { color: #7f8c8d; font-size: 14px; margin-bottom: 8px; }
+        .stat-value { color: #2c3e50; font-size: 28px; font-weight: bold; }
+        .stat-change { font-size: 12px; margin-top: 5px; }
+        .stat-change.positive { color: #27ae60; }
+        .stat-change.negative { color: #e74c3c; }
+
+        /* Content Sections */
+        .content-section { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #ecf0f1; }
+        .section-header h2 { color: #2c3e50; font-size: 22px; }
+        .btn { padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; }
+        .btn:hover { background: #2980b9; }
+        .btn-success { background: #27ae60; }
+        .btn-success:hover { background: #229954; }
+        .btn-warning { background: #f39c12; }
+        .btn-warning:hover { background: #d68910; }
+        .btn-danger { background: #e74c3c; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+
+        /* Quick Actions */
+        .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; }
+        .action-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: #f8f9fa; border: 1px solid #ecf0f1; border-radius: 8px; text-decoration: none; color: #2c3e50; transition: all 0.3s; text-align: center; }
+        .action-btn:hover { background: #e8f5ed; border-color: #27ae60; transform: translateY(-2px); }
+        .action-icon { font-size: 32px; margin-bottom: 10px; }
+        .action-label { font-size: 14px; font-weight: 600; color: #2c3e50; }
+
+        /* Loan List */
         .loan-list { display: grid; gap: 14px; }
-        .loan-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: var(--background); border-radius: 10px; border: 1px solid var(--line); }
-        .loan-info h4 { margin: 0 0 6px; font-size: .95rem; }
-        .loan-meta { color: var(--muted); font-size: .85rem; }
+        .loan-item { display: flex; justify-content: space-between; align-items: center; padding: 16px; background: #f8f9fa; border-radius: 8px; border: 1px solid #ecf0f1; }
+        .loan-info h4 { margin: 0 0 6px; font-size: 14px; color: #2c3e50; }
+        .loan-meta { color: #7f8c8d; font-size: 13px; }
         .loan-amount { text-align: right; }
-        .loan-amount strong { display: block; font-size: 1.05rem; margin-bottom: 4px; }
-        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: .75rem; font-weight: 700; text-transform: uppercase; }
+        .loan-amount strong { display: block; font-size: 16px; margin-bottom: 4px; color: #2c3e50; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; text-transform: uppercase; }
         .status-pending { background: #fff3cd; color: #856404; }
         .status-approved { background: #d1e7dd; color: #0f5132; }
         .status-rejected { background: #f8d7da; color: #721c24; }
         .status-repaid { background: #d1e7dd; color: #0f5132; }
-        .quick-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .action-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; background: var(--background); border: 1px solid var(--line); border-radius: 10px; text-decoration: none; color: var(--ink); transition: all .15s; }
-        .action-btn:hover { background: #e8f5ed; border-color: var(--primary); }
-        .action-icon { width: 32px; height: 32px; margin-bottom: 8px; color: var(--primary); }
-        .action-label { font-size: .85rem; font-weight: 600; }
+
+        /* Empty State */
+        .empty-state { text-align: center; padding: 40px; color: #95a5a6; }
+        .empty-state-icon { font-size: 48px; margin-bottom: 15px; }
+
+        /* Responsive */
         @media (max-width: 768px) {
-            .dashboard-layout { grid-template-columns: 1fr; }
-            .sidebar { display: none; }
-            .main-content { padding: 20px; }
+            .sidebar { width: 100%; position: relative; }
+            .main-content { margin-left: 0; }
+            .stats-grid { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-<div class="dashboard-layout">
+    <!-- Sidebar -->
     <aside class="sidebar">
-        <div class="sidebar-brand">
-            <a href="<%= request.getContextPath() %>/dashboard">Credit SACCO</a>
+        <div class="sidebar-header">
+            <h2>🏛️ Kimwanyi SACCO</h2>
+            <p>Member Portal</p>
         </div>
-        
-        <nav class="nav-section">
-            <div class="nav-section-title">Main Menu</div>
-            <a href="<%= request.getContextPath() %>/dashboard" class="nav-item active">
-                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-                Dashboard
-            </a>
-            <a href="<%= request.getContextPath() %>/loans" class="nav-item">
-                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                My Loans
-            </a>
-            <a href="<%= request.getContextPath() %>/payments?action=history" class="nav-item">
-                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"/></svg>
-                Payment History
-            </a>
-        </nav>
+        <ul class="nav-menu">
+            <li class="nav-section">Main Menu</li>
+            <li class="nav-item">
+                <a href="<%= request.getContextPath() %>/dashboard" class="nav-link active">
+                    <span class="icon">📊</span> Dashboard
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<%= request.getContextPath() %>/loans" class="nav-link">
+                    <span class="icon">📋</span> My Loans
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<%= request.getContextPath() %>/payments?action=history" class="nav-link">
+                    <span class="icon">💳</span> Payment History
+                </a>
+            </li>
 
-        <nav class="nav-section">
-            <div class="nav-section-title">Services</div>
-            <a href="<%= request.getContextPath() %>/loans" class="nav-item">
-                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
-                Apply for Loan
-            </a>
-            <a href="<%= request.getContextPath() %>/savings" class="nav-item">
-                <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                My Savings
-            </a>
-        </nav>
+            <li class="nav-section">Services</li>
+            <li class="nav-item">
+                <a href="<%= request.getContextPath() %>/loans" class="nav-link">
+                    <span class="icon">➕</span> Apply for Loan
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<%= request.getContextPath() %>/savings" class="nav-link">
+                    <span class="icon">💰</span> My Savings
+                </a>
+            </li>
 
-        <div style="margin-top: auto; padding: 0 12px; border-top: 1px solid var(--line); padding-top: 16px; margin-top: 24px;">
-            <form method="post" action="<%= request.getContextPath() %>/logout">
-                <button type="submit" class="nav-item" style="width: 100%; border: none; background: none; cursor: pointer; text-align: left;">
-                    <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                    Logout
-                </button>
-            </form>
-        </div>
+            <li class="nav-section">System</li>
+            <li class="nav-item">
+                <form method="post" action="<%= request.getContextPath() %>/logout" style="display: inline;">
+                    <button type="submit" class="nav-link" style="width: 100%; border: none; background: none; cursor: pointer; text-align: left;">
+                        <span class="icon">🚪</span> Logout
+                    </button>
+                </form>
+            </li>
+        </ul>
     </aside>
 
+    <!-- Main Content -->
     <main class="main-content">
-        <section class="welcome-panel" style="margin-bottom: 32px;">
-            <p class="eyebrow">Member Dashboard</p>
-            <h1 style="font-size: 1.85rem; margin-bottom: 8px;">Welcome back, <%= request.getAttribute("safeUserName") %>.</h1>
-            <p style="color: var(--muted);">Manage your loans, track payments, and grow your financial future.</p>
-        </section>
+        <div class="page-header">
+            <h1>Member Dashboard</h1>
+            <div class="user-info">
+                <span>Welcome, <strong><%= request.getAttribute("safeUserName") %></strong></span>
+                <form method="post" action="<%= request.getContextPath() %>/logout" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
+            </div>
+        </div>
 
+        <!-- Stats Cards -->
         <div class="stats-grid">
-            <article class="stat-card">
+            <div class="stat-card info">
                 <div class="stat-label">Active Loans</div>
                 <div class="stat-value" id="activeLoans">0</div>
                 <div class="stat-change">Currently borrowing</div>
-            </article>
-            <article class="stat-card">
+            </div>
+            <div class="stat-card warning">
                 <div class="stat-label">Total Outstanding</div>
                 <div class="stat-value" id="totalOutstanding">KES 0</div>
                 <div class="stat-change">Amount to repay</div>
-            </article>
-            <article class="stat-card">
+            </div>
+            <div class="stat-card success">
                 <div class="stat-label">Savings Balance</div>
                 <div class="stat-value" id="savingsBalance">KES 0</div>
-                <div class="stat-change">Your savings</div>
-            </article>
-            <article class="stat-card">
-                <div class="stat-label">Total Repaid</div>
-                <div class="stat-value" id="totalRepaid">KES 0</div>
-                <div class="stat-change">Payment history</div>
-            </article>
+                <div class="stat-change positive">Your savings</div>
+            </div>
+            <div class="stat-card danger">
+                <div class="stat-label">Next Due Date</div>
+                <div class="stat-value" id="nextDue" style="font-size: 20px;">-</div>
+                <div class="stat-change">Upcoming payment</div>
+            </div>
         </div>
 
-        <div class="section-card">
+        <!-- Quick Actions -->
+        <div class="content-section">
             <div class="section-header">
-                <h2 class="section-title">Quick Actions</h2>
+                <h2>Quick Actions</h2>
             </div>
             <div class="quick-actions">
                 <a href="<%= request.getContextPath() %>/loans" class="action-btn">
-                    <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    <div class="action-icon">➕</div>
                     <span class="action-label">Apply for Loan</span>
                 </a>
                 <a href="<%= request.getContextPath() %>/payments?action=history" class="action-btn">
-                    <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    <div class="action-icon">💳</div>
                     <span class="action-label">Payment History</span>
                 </a>
                 <a href="<%= request.getContextPath() %>/loans" class="action-btn">
-                    <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                    <span class="action-label">View Loans</span>
+                    <div class="action-icon">📋</div>
+                    <span class="action-label">View My Loans</span>
                 </a>
                 <a href="<%= request.getContextPath() %>/savings" class="action-btn">
-                    <svg class="action-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    <div class="action-icon">💰</div>
                     <span class="action-label">My Savings</span>
                 </a>
             </div>
         </div>
 
-        <div class="section-card">
+        <!-- Recent Loans -->
+        <div class="content-section">
             <div class="section-header">
-                <h2 class="section-title">Recent Loans</h2>
-                <a href="<%= request.getContextPath() %>/loans" class="button" style="padding: 8px 16px; font-size: .85rem;">View All</a>
+                <h2>Recent Loans</h2>
+                <a href="<%= request.getContextPath() %>/loans" class="btn btn-sm">View All</a>
             </div>
             <div class="loan-list" id="recentLoans">
-                <p style="color: var(--muted); text-align: center; padding: 24px;">Loading your loans...</p>
+                <div class="empty-state">
+                    <div class="empty-state-icon">📋</div>
+                    <p>Loading your loans...</p>
+                </div>
             </div>
         </div>
     </main>
-</div>
 
-<script>
-    // Dashboard statistics and recent loans will be loaded here
-    document.addEventListener('DOMContentLoaded', function() {
-        loadDashboardData();
-    });
+    <script>
+        // Dashboard statistics and recent loans will be loaded here
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
 
-    function loadDashboardData() {
-        fetch('<%= request.getContextPath() %>/api/dashboard-data')
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('activeLoans').textContent = data.activeLoans || 0;
-                document.getElementById('totalOutstanding').textContent = 'KES ' + (data.totalOutstanding || 0).toLocaleString();
-                document.getElementById('savingsBalance').textContent = 'KES ' + (data.savingsBalance || 0).toLocaleString();
-                document.getElementById('nextDue').textContent = data.nextDue || '-';
-                document.getElementById('totalRepaid').textContent = 'KES ' + (data.totalRepaid || 0).toLocaleString();
-                
-                const recentLoansContainer = document.getElementById('recentLoans');
-                if (data.recentLoans && data.recentLoans.length > 0) {
-                    recentLoansContainer.innerHTML = data.recentLoans.map(function(loan) {
-                        return '<div class="loan-item">' +
-                            '<div class="loan-info">' +
-                                '<h4>Loan #' + loan.id + ' - ' + loan.purpose + '</h4>' +
-                                '<div class="loan-meta">Applied: ' + new Date(loan.appliedAt).toLocaleDateString() + '</div>' +
-                            '</div>' +
-                            '<div class="loan-amount">' +
-                                '<strong>KES ' + loan.amount.toLocaleString() + '</strong>' +
-                                '<span class="status-badge status-' + loan.status.toLowerCase() + '">' + loan.status + '</span>' +
-                            '</div>' +
+        function loadDashboardData() {
+            fetch('<%= request.getContextPath() %>/api/dashboard-data')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('activeLoans').textContent = data.activeLoans || 0;
+                    document.getElementById('totalOutstanding').textContent = 'KES ' + (data.totalOutstanding || 0).toLocaleString();
+                    document.getElementById('savingsBalance').textContent = 'KES ' + (data.savingsBalance || 0).toLocaleString();
+                    document.getElementById('nextDue').textContent = data.nextDue || '-';
+                    document.getElementById('totalRepaid').textContent = 'KES ' + (data.totalRepaid || 0).toLocaleString();
+
+                    const recentLoansContainer = document.getElementById('recentLoans');
+                    if (data.recentLoans && data.recentLoans.length > 0) {
+                        recentLoansContainer.innerHTML = data.recentLoans.map(function(loan) {
+                            return '<div class="loan-item">' +
+                                '<div class="loan-info">' +
+                                    '<h4>Loan #' + loan.id + ' - ' + loan.purpose + '</h4>' +
+                                    '<div class="loan-meta">Applied: ' + new Date(loan.appliedAt).toLocaleDateString() + '</div>' +
+                                '</div>' +
+                                '<div class="loan-amount">' +
+                                    '<strong>KES ' + loan.amount.toLocaleString() + '</strong>' +
+                                    '<span class="status-badge status-' + loan.status.toLowerCase() + '">' + loan.status + '</span>' +
+                                '</div>' +
+                            '</div>';
+                        }).join('');
+                    } else {
+                        recentLoansContainer.innerHTML =
+                            '<div class="empty-state">' +
+                                '<div class="empty-state-icon">📋</div>' +
+                                '<p>No loans yet.</p>' +
+                                '<p><a href="<%= request.getContextPath() %>/loans" style="color: #3498db;">Apply for your first loan</a></p>' +
+                            '</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading dashboard data:', error);
+                    document.getElementById('recentLoans').innerHTML =
+                        '<div class="empty-state">' +
+                            '<div class="empty-state-icon">⚠️</div>' +
+                            '<p>Unable to load data. Please refresh the page.</p>' +
                         '</div>';
-                    }).join('');
-                } else {
-                    recentLoansContainer.innerHTML = '<p style="color: var(--muted); text-align: center; padding: 24px;">No loans yet. <a href="<%= request.getContextPath() %>/loans" style="color: var(--primary);">Apply for your first loan</a></p>';
-                }
-            })
-            .catch(error => {
-                console.error('Error loading dashboard data:', error);
-                document.getElementById('recentLoans').innerHTML = '<p style="color: var(--muted); text-align: center; padding: 24px;">Unable to load data. Please refresh the page.</p>';
-            });
-    }
-</script>
+                });
+        }
+    </script>
 </body>
 </html>
