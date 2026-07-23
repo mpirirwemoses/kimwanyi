@@ -1,19 +1,9 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <%@ page import="org.example.model.Loan" %>
 <%@ page import="org.example.model.LoanStatus" %>
 <%@ page import="java.math.BigDecimal" %>
-<%!
-    public static String escapeJs(String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.replace("\\", "\\\\")
-                   .replace("'", "\\'")
-                   .replace("\"", "\\\"")
-                   .replace("\n", "\\n")
-                   .replace("\r", "");
-    }
-%>
 <!doctype html>
 <html lang="en">
 <head>
@@ -66,87 +56,82 @@
             <article class="panel">
                 <div class="panel-heading">
                     <div><p class="eyebrow">Applications</p><h2>All loans</h2></div>
+                    <a href="<%= request.getContextPath() %>/admin-dashboard?section=audit&module=loan" class="button secondary">Audit Trail</a>
                 </div>
 
-                <% if (request.getParameter("error") != null) { %>
-                    <p class="message" role="alert"><%= request.getParameter("error") %></p>
-                <% } else if (request.getParameter("message") != null) { %>
+                <c:if test="${not empty param.error}">
+                    <p class="message" role="alert">${param.error}</p>
+                </c:if>
+                <c:if test="${not empty param.message}">
                     <p class="message success" role="status">Operation completed successfully.</p>
-                <% } %>
+                </c:if>
 
-                <div class="filter-bar">
-                    <label for="statusFilter">Filter by status</label>
-                    <select id="statusFilter" onchange="filterLoans()">
-                        <option value="">All</option>
-                        <option value="PENDING">Pending</option>
-                        <option value="APPROVED">Approved</option>
-                        <option value="REJECTED">Rejected</option>
-                        <option value="CANCELLED">Cancelled</option>
-                        <option value="REPAID">Repaid</option>
-                        <option value="OVERDUE">Overdue</option>
-                    </select>
-                    <input type="text" id="searchInput" placeholder="Search member or purpose..." oninput="filterLoans()"/>
-                </div>
+                <form method="get" action="${pageContext.request.contextPath}/loans" style="margin-bottom: 20px;">
+                    <div class="filter-bar">
+                        <label for="statusFilter">Filter by status</label>
+                        <select id="statusFilter" name="status" onchange="this.form.submit()">
+                            <option value="">All</option>
+                            <option value="PENDING" ${statusFilter == 'PENDING' ? 'selected' : ''}>Pending</option>
+                            <option value="APPROVED" ${statusFilter == 'APPROVED' ? 'selected' : ''}>Approved</option>
+                            <option value="REJECTED" ${statusFilter == 'REJECTED' ? 'selected' : ''}>Rejected</option>
+                            <option value="CANCELLED" ${statusFilter == 'CANCELLED' ? 'selected' : ''}>Cancelled</option>
+                            <option value="REPAID" ${statusFilter == 'REPAID' ? 'selected' : ''}>Repaid</option>
+                            <option value="OVERDUE" ${statusFilter == 'OVERDUE' ? 'selected' : ''}>Overdue</option>
+                        </select>
+                        <input type="text" name="search" placeholder="Search member or purpose..." value="${search}" style="padding: 10px; border: 1px solid #b9cbc0; border-radius: 8px; background: #fff; font: inherit;"/>
+                        <button type="submit" class="button">Filter</button>
+                        <a href="${pageContext.request.contextPath}/loans" class="button secondary">Reset</a>
+                    </div>
+                </form>
 
-                <%
-                    java.util.List<Loan> loans = (java.util.List<Loan>) request.getAttribute("loans");
-                    if (loans == null || loans.isEmpty()) {
-                %>
+                <c:if test="${empty loans}">
                     <div class="empty-state">
                         <h3>No applications yet</h3>
                         <p>Loan applications from members will appear here.</p>
                     </div>
-                <%
-                    } else {
-                %>
+                </c:if>
+                <c:if test="${not empty loans}">
                     <div class="loan-grid" id="loanGrid">
-                        <%
-                            for (Loan loan : loans) {
-                                String statusClass = "status-" + loan.getStatus().name().toLowerCase();
-                                BigDecimal outstanding = loan.getOutstandingBalance();
-                                boolean canApprove = loan.getStatus() == LoanStatus.PENDING;
-                                boolean canReject = loan.getStatus() == LoanStatus.PENDING;
-                                String memberName = loan.getMember().getFullName();
-                                String purpose = loan.getPurpose();
-                        %>
-                        <div class="loan-card" data-status="<%= loan.getStatus() %>" data-search="<%= memberName %> <%= purpose %>">
-                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                                <h3>Loan #<%= loan.getId() %> - <%= loan.getMember().getFullName() %></h3>
-                                <span class="status-badge <%= statusClass %>"><%= loan.getStatus() %></span>
+                        <c:forEach var="loan" items="${loans}">
+                            <%
+                                // Cast for method access
+                                Loan loanObj = (Loan) pageContext.getAttribute("loan");
+                                BigDecimal outstanding = loanObj.getOutstandingBalance();
+                            %>
+                            <div class="loan-card" data-status="${loan.status}" data-search="${loan.member.fullName} ${loan.purpose}">
+                                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                                    <h3>Loan #${loan.id} - ${loan.member.fullName}</h3>
+                                    <span class="status-badge status-${loan.status.toLowerCase()}">${loan.status}</span>
+                                </div>
+                                <div class="loan-meta">
+                                    <div>Member: <strong>${loan.member.fullName} (${loan.member.email})</strong></div>
+                                    <div>Requested amount: <strong>UGX ${loan.requestedAmount}</strong></div>
+                                    <div>Purpose: <strong>${loan.purpose}</strong></div>
+                                    <div>Applied on: <strong>${loan.appliedAtFormatted}</strong></div>
+                                    <c:if test="${not empty loan.totalRepayable}">
+                                        <div>Total repayable: <strong>UGX ${loan.totalRepayable}</strong></div>
+                                    </c:if>
+                                    <c:if test="${not empty outstanding}">
+                                        <div>Outstanding balance: <strong>UGX ${outstanding}</strong></div>
+                                    </c:if>
+                                    <c:if test="${not empty loan.reviewComment}">
+                                        <div>Review comment: <strong>${loan.reviewComment}</strong></div>
+                                    </c:if>
+                                </div>
+                                <div class="loan-actions">
+                                    <c:if test="${loan.status == 'PENDING'}">
+                                        <button type="button" class="button" data-action="approve" data-loan-id="${loan.id}">Approve</button>
+                                        <button type="button" class="button secondary" data-action="reject" data-loan-id="${loan.id}">Reject</button>
+                                    </c:if>
+                                    <c:if test="${loan.status == 'APPROVED'}">
+                                        <button type="button" class="button secondary" onclick="openInterestModal(${loan.id})">Calculate Interest</button>
+                                    </c:if>
+                                    <a href="${pageContext.request.contextPath}/admin-dashboard?section=loans&action=view&id=${loan.id}" class="button secondary">View Details</a>
+                                </div>
                             </div>
-                            <div class="loan-meta">
-                                <div>Member: <strong><%= loan.getMember().getFullName() %> (<%= loan.getMember().getEmail() %>)</strong></div>
-                                <div>Requested amount: <strong>KES <%= loan.getRequestedAmount() %></strong></div>
-                                <div>Purpose: <strong><%= loan.getPurpose() %></strong></div>
-                                <div>Applied on: <strong><%= loan.getAppliedAtFormatted() %></strong></div>
-                                <% if (loan.getTotalRepayable() != null) { %>
-                                    <div>Total repayable: <strong>KES <%= loan.getTotalRepayable() %></strong></div>
-                                <% } %>
-                                <% if (outstanding != null) { %>
-                                    <div>Outstanding balance: <strong>KES <%= outstanding %></strong></div>
-                                <% } %>
-                                <% if (loan.getReviewComment() != null && !loan.getReviewComment().isBlank()) { %>
-                                    <div>Review comment: <strong><%= loan.getReviewComment() %></strong></div>
-                                <% } %>
-                            </div>
-                            <div class="loan-actions">
-                                <% if (canApprove) { %>
-                                    <button type="button" class="button" data-action="approve" data-loan-id="<%= loan.getId() %>">Approve</button>
-                                    <button type="button" class="button secondary" data-action="reject" data-loan-id="<%= loan.getId() %>">Reject</button>
-                                <% } %>
-                                <% if (loan.getStatus() == LoanStatus.APPROVED) { %>
-                                    <button type="button" class="button secondary" onclick="openInterestModal(<%= loan.getId() %>)">Calculate Interest</button>
-                                <% } %>
-                                <a href="<%= request.getContextPath() %>/admin-dashboard?section=loans&action=view&id=<%= loan.getId() %>" class="button secondary">View Details</a>
-                            </div>
-                        </div>
-                        <%
-                            }
-                        %>
+                        </c:forEach>
                     </div>
-                <%
-                    }
-                %>
+                </c:if>
             </article>
         </section>
     </main>
@@ -227,18 +212,6 @@
             openActionModal(type, loanId);
         });
     });
-
-    function filterLoans() {
-        const status = document.getElementById('statusFilter').value;
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        document.querySelectorAll('#loanGrid .loan-card').forEach(card => {
-            const cardStatus = card.getAttribute('data-status');
-            const cardSearch = card.getAttribute('data-search').toLowerCase();
-            const matchesStatus = !status || cardStatus === status;
-            const matchesSearch = !search || cardSearch.includes(search);
-            card.style.display = matchesStatus && matchesSearch ? '' : 'none';
-        });
-    }
 
     function openInterestModal(loanId) {
         document.getElementById('interestLoanId').value = loanId;

@@ -32,9 +32,14 @@ public class SavingsServlet extends HttpServlet {
         boolean admin = isAdmin(request);
         
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            Transaction transaction = session.beginTransaction();
             User user = session.find(User.class, userId);
+            if (user == null) {
+                response.sendRedirect(request.getContextPath() + "/login.jsp");
+                return;
+            }
             
-            if (admin) {
+            if (admin && (action == null || "admin".equals(action) || (!"deposit".equals(action) && !"withdraw".equals(action) && !"statement".equals(action) && !"calculate-interest".equals(action)))) {
                 // Admin view - show all savings accounts
                 List<SavingsAccount> accounts = session.createQuery(
                     "select sa from SavingsAccount sa join fetch sa.member order by sa.createdAt desc", 
@@ -56,9 +61,10 @@ public class SavingsServlet extends HttpServlet {
                 if (totalMembers == null) totalMembers = 0L;
                 request.setAttribute("totalMembers", totalMembers);
                 
+                transaction.commit();
                 request.getRequestDispatcher("/WEB-INF/views/admin-savings.jsp").forward(request, response);
             } else {
-                // Member view - handle multiple accounts
+                // Member view (or deposit/withdraw for active user) - handle accounts
                 List<SavingsAccount> allAccounts = session.createQuery(
                     "select sa from SavingsAccount sa where sa.member.id = :memberId order by sa.createdAt desc", 
                     SavingsAccount.class)
@@ -78,7 +84,7 @@ public class SavingsServlet extends HttpServlet {
                 
                 // If no valid selection, use first account or session default
                 if (selectedAccountId == null) {
-                    Object sessionAccountId = request.getSession(false).getAttribute("selectedSavingsAccountId");
+                    Object sessionAccountId = request.getSession(false) != null ? request.getSession(false).getAttribute("selectedSavingsAccountId") : null;
                     if (sessionAccountId instanceof Long) {
                         selectedAccountId = (Long) sessionAccountId;
                     }
@@ -101,40 +107,40 @@ public class SavingsServlet extends HttpServlet {
                     selectedAccountId = selectedAccount.getId();
                 }
                 
-                // Store selected account in session
-                if (selectedAccountId != null) {
-                    request.getSession(false).setAttribute("selectedSavingsAccountId", selectedAccountId);
+                // Create account if none exist or none selected
+                if (selectedAccount == null) {
+                    selectedAccount = createSavingsAccount(session, user);
+                    allAccounts.add(selectedAccount);
+                    selectedAccountId = selectedAccount.getId();
                 }
                 
-                // Create account if none exist
-                if (allAccounts.isEmpty()) {
-                    SavingsAccount newAccount = createSavingsAccount(session, user);
-                    allAccounts.add(newAccount);
-                    selectedAccount = newAccount;
-                    selectedAccountId = newAccount.getId();
+                // Store selected account in session
+                if (selectedAccountId != null && request.getSession(false) != null) {
                     request.getSession(false).setAttribute("selectedSavingsAccountId", selectedAccountId);
                 }
                 
                 // Automatically calculate and apply interest if it's been a month
                 if (selectedAccount != null) {
                     LocalDateTime lastCalc = selectedAccount.getLastInterestCalculation();
-                    long daysSinceLastCalc = java.time.temporal.ChronoUnit.DAYS.between(lastCalc, LocalDateTime.now());
-                    
-                    if (daysSinceLastCalc >= 30 && selectedAccount.getBalance().compareTo(BigDecimal.ZERO) > 0) {
-                        // Auto-apply interest
-                        BigDecimal balanceBefore = selectedAccount.getBalance();
-                        selectedAccount.applyInterest();
-                        BigDecimal interest = selectedAccount.getBalance().subtract(balanceBefore);
+                    if (lastCalc != null) {
+                        long daysSinceLastCalc = java.time.temporal.ChronoUnit.DAYS.between(lastCalc, LocalDateTime.now());
                         
-                        if (interest.compareTo(BigDecimal.ZERO) > 0) {
-                            SavingsTransaction tx = new SavingsTransaction(
-                                selectedAccount, user, TransactionType.INTEREST, interest,
-                                balanceBefore, selectedAccount.getBalance(), generateReference("INT")
-                            );
-                            tx.setNotes("Automatic monthly interest");
-                            session.persist(tx);
+                        if (daysSinceLastCalc >= 30 && selectedAccount.getBalance() != null && selectedAccount.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+                            // Auto-apply interest
+                            BigDecimal balanceBefore = selectedAccount.getBalance();
+                            selectedAccount.applyInterest();
+                            BigDecimal interest = selectedAccount.getBalance().subtract(balanceBefore);
+                            
+                            if (interest.compareTo(BigDecimal.ZERO) > 0) {
+                                SavingsTransaction tx = new SavingsTransaction(
+                                    selectedAccount, user, TransactionType.INTEREST, interest,
+                                    balanceBefore, selectedAccount.getBalance(), generateReference("INT")
+                                );
+                                tx.setNotes("Automatic monthly interest");
+                                session.persist(tx);
+                            }
+                            session.merge(selectedAccount);
                         }
-                        session.merge(selectedAccount);
                     }
                 }
                 
@@ -149,6 +155,8 @@ public class SavingsServlet extends HttpServlet {
                         .list();
                 }
                 
+                transaction.commit();
+                
                 request.setAttribute("allAccounts", allAccounts);
                 request.setAttribute("account", selectedAccount);
                 request.setAttribute("transactions", transactions != null ? transactions : List.of());
@@ -160,6 +168,19 @@ public class SavingsServlet extends HttpServlet {
                     request.getRequestDispatcher("/WEB-INF/views/savings-deposit.jsp").forward(request, response);
                 } else if ("withdraw".equals(action)) {
                     request.getRequestDispatcher("/WEB-INF/views/savings-withdraw.jsp").forward(request, response);
+                } else if ("calculate-interest".equals(action)) {
+                    if (selectedAccount != null) {
+                        BigDecimal calculatedInterest = selectedAccount.calculateInterest();
+                        BigDecimal currentBalance = selectedAccount.getBalance() != null ? selectedAccount.getBalance() : BigDecimal.ZERO;
+                        BigDecimal projectedBalance = currentBalance.add(calculatedInterest);
+                        request.setAttribute("calculatedInterest", calculatedInterest);
+                        request.setAttribute("currentBalance", currentBalance);
+                        request.setAttribute("projectedBalance", projectedBalance);
+                        request.setAttribute("interestRate", selectedAccount.getInterestRate());
+                        request.setAttribute("lastInterestCalculation", selectedAccount.getLastInterestCalculation());
+                        request.setAttribute("account", selectedAccount);
+                    }
+                    request.getRequestDispatcher("/WEB-INF/views/interest-calculation.jsp").forward(request, response);
                 } else {
                     request.getRequestDispatcher("/WEB-INF/views/member-savings.jsp").forward(request, response);
                 }
@@ -182,7 +203,9 @@ public class SavingsServlet extends HttpServlet {
             Transaction transaction = session.beginTransaction();
             
             String viewPath;
-            if (isAdmin(request)) {
+            if ("deposit".equals(action) || "withdraw".equals(action) || "calculate-interest".equals(action) || "change-account-number".equals(action)) {
+                viewPath = memberAction(session, user, action, request);
+            } else if (isAdmin(request)) {
                 viewPath = adminAction(session, user, action, request);
             } else {
                 viewPath = memberAction(session, user, action, request);
@@ -198,7 +221,13 @@ public class SavingsServlet extends HttpServlet {
             
             response.sendRedirect(request.getContextPath() + "/savings?message=success");
         } catch (IllegalArgumentException | IllegalStateException exception) {
-            response.sendRedirect(request.getContextPath() + "/savings?error=" + exception.getMessage().replace(' ', '+'));
+            String encodedErr = java.net.URLEncoder.encode(exception.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+            response.sendRedirect(request.getContextPath() + "/savings?error=" + encodedErr);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            String msg = exception.getMessage() != null ? exception.getMessage() : "An unexpected error occurred.";
+            String encodedErr = java.net.URLEncoder.encode(msg, java.nio.charset.StandardCharsets.UTF_8);
+            response.sendRedirect(request.getContextPath() + "/savings?error=" + encodedErr);
         }
     }
 
@@ -215,33 +244,49 @@ public class SavingsServlet extends HttpServlet {
         }
         
         if (accountId == null) {
-            Object sessionAccountId = request.getSession(false).getAttribute("selectedSavingsAccountId");
+            Object sessionAccountId = request.getSession(false) != null ? request.getSession(false).getAttribute("selectedSavingsAccountId") : null;
             if (sessionAccountId instanceof Long) {
                 accountId = (Long) sessionAccountId;
             }
         }
         
         if (accountId == null) {
-            throw new IllegalArgumentException("No account selected. Please select an account first.");
+            List<SavingsAccount> memberAccounts = session.createQuery(
+                "select sa from SavingsAccount sa where sa.member.id = :memberId order by sa.createdAt desc", SavingsAccount.class)
+                .setParameter("memberId", member.getId())
+                .list();
+            if (!memberAccounts.isEmpty()) {
+                accountId = memberAccounts.get(0).getId();
+            } else {
+                SavingsAccount newAcc = createSavingsAccount(session, member);
+                accountId = newAcc.getId();
+            }
         }
         
         SavingsAccount account = session.find(SavingsAccount.class, accountId);
-        if (account == null || !account.getMember().getId().equals(member.getId())) {
+        if (account == null) {
+            throw new IllegalArgumentException("Account not found.");
+        }
+        if (!isAdmin(request) && !account.getMember().getId().equals(member.getId())) {
             throw new IllegalArgumentException("Account not found or access denied.");
         }
         
         if ("deposit".equals(action)) {
             BigDecimal amount = amount(request);
-            BigDecimal balanceBefore = account.getBalance();
+            BigDecimal balanceBefore = account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO;
             account.deposit(amount);
             BigDecimal balanceAfter = account.getBalance();
             
             SavingsTransaction tx = new SavingsTransaction(
-                account, member, TransactionType.DEPOSIT, amount, 
+                account, account.getMember(), TransactionType.DEPOSIT, amount, 
                 balanceBefore, balanceAfter, generateReference("DEP")
             );
+            String cardLastFour = value(request, "cardLastFour");
+            if (cardLastFour != null && cardLastFour.length() > 4) {
+                cardLastFour = cardLastFour.substring(cardLastFour.length() - 4);
+            }
             tx.setTransactionId(value(request, "transactionId"));
-            tx.setCardLastFour(value(request, "cardLastFour"));
+            tx.setCardLastFour(cardLastFour);
             tx.setNotes(value(request, "notes"));
             session.persist(tx);
             session.merge(account);
@@ -249,29 +294,37 @@ public class SavingsServlet extends HttpServlet {
         } else if ("withdraw".equals(action)) {
             BigDecimal amount = amount(request);
             
+            BigDecimal currentBal = account.getBalance() != null ? account.getBalance() : BigDecimal.ZERO;
+            BigDecimal minimumBalance = account.getMinimumBalance() != null ? account.getMinimumBalance() : BigDecimal.ZERO;
+            
             // Validate minimum balance after withdrawal
-            BigDecimal balanceAfterWithdrawal = account.getBalance().subtract(amount);
-            if (balanceAfterWithdrawal.compareTo(account.getMinimumBalance()) < 0) {
-                throw new IllegalArgumentException("Withdrawal would violate minimum balance requirement of KES " + account.getMinimumBalance() + 
-                    ". Maximum withdrawable: KES " + account.getBalance().subtract(account.getMinimumBalance()));
+            BigDecimal balanceAfterWithdrawal = currentBal.subtract(amount);
+            if (balanceAfterWithdrawal.compareTo(minimumBalance) < 0) {
+                BigDecimal maxWithdrawable = currentBal.subtract(minimumBalance);
+                if (maxWithdrawable.compareTo(BigDecimal.ZERO) < 0) maxWithdrawable = BigDecimal.ZERO;
+                throw new IllegalArgumentException("Withdrawal would violate minimum balance requirement of UGX " + minimumBalance + 
+                    ". Maximum withdrawable: UGX " + maxWithdrawable);
             }
             
             // Validate daily withdrawal limit
             LocalDateTime today = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS);
-            LocalDateTime lastWithdrawal = account.getLastWithdrawalDate().truncatedTo(ChronoUnit.DAYS);
+            LocalDateTime lastWithdrawalDate = account.getLastWithdrawalDate();
+            LocalDateTime lastWithdrawal = lastWithdrawalDate != null ? lastWithdrawalDate.truncatedTo(ChronoUnit.DAYS) : null;
             
             BigDecimal dailyAmount = account.getDailyWithdrawalAmount();
-            if (!today.equals(lastWithdrawal)) {
-                // Reset daily amount if it's a new day
+            if (dailyAmount == null || lastWithdrawal == null || !today.equals(lastWithdrawal)) {
+                // Reset daily amount if it's a new day or no previous withdrawal
                 dailyAmount = BigDecimal.ZERO;
             }
             
-            if (dailyAmount.add(amount).compareTo(account.getDailyWithdrawalLimit()) > 0) {
-                throw new IllegalArgumentException("Daily withdrawal limit exceeded. Remaining: KES " + 
-                    account.getDailyWithdrawalLimit().subtract(dailyAmount));
+            BigDecimal dailyLimit = account.getDailyWithdrawalLimit() != null ? account.getDailyWithdrawalLimit() : new BigDecimal("50000.00");
+            if (dailyAmount.add(amount).compareTo(dailyLimit) > 0) {
+                BigDecimal remainingLimit = dailyLimit.subtract(dailyAmount);
+                if (remainingLimit.compareTo(BigDecimal.ZERO) < 0) remainingLimit = BigDecimal.ZERO;
+                throw new IllegalArgumentException("Daily withdrawal limit exceeded. Remaining: UGX " + remainingLimit);
             }
             
-            BigDecimal balanceBefore = account.getBalance();
+            BigDecimal balanceBefore = currentBal;
             account.withdraw(amount);
             BigDecimal balanceAfter = account.getBalance();
             
@@ -280,11 +333,15 @@ public class SavingsServlet extends HttpServlet {
             account.setLastWithdrawalDate(LocalDateTime.now());
             
             SavingsTransaction tx = new SavingsTransaction(
-                account, member, TransactionType.WITHDRAWAL, amount, 
+                account, account.getMember(), TransactionType.WITHDRAWAL, amount, 
                 balanceBefore, balanceAfter, generateReference("WTH")
             );
             tx.setTransactionId(value(request, "transactionId"));
-            tx.setCardLastFour(value(request, "cardLastFour"));
+            String cardLastFour = value(request, "cardLastFour");
+            if (cardLastFour != null && cardLastFour.length() > 4) {
+                cardLastFour = cardLastFour.substring(cardLastFour.length() - 4);
+            }
+            tx.setCardLastFour(cardLastFour);
             tx.setNotes(value(request, "notes"));
             session.persist(tx);
             session.merge(account);

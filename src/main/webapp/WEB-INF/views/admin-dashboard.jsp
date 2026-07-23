@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!doctype html>
 <html lang="en">
 <head>
@@ -68,7 +68,7 @@
             .then(response => response.json())
             .then(data => {
                 document.getElementById('totalMembers').textContent = data.totalMembers || 0;
-                document.getElementById('totalSavings').textContent = 'KES ' + (data.totalSavings || 0).toLocaleString();
+                document.getElementById('totalSavings').textContent = 'UGX ' + (data.totalSavings || 0).toLocaleString();
                 document.getElementById('pendingLoans').textContent = data.pendingLoans || 0;
             })
             .catch(error => {

@@ -14,9 +14,9 @@ public class EmailService {
     
     private static final String SMTP_HOST = "smtp.gmail.com";
     private static final String SMTP_PORT = "587";
-    private static final String EMAIL_USERNAME = "kimwanyisacco@gmail.com";
-    private static final String EMAIL_PASSWORD = "your-app-password";
-    private static final boolean EMAIL_ENABLED = false; // Set to true when email is configured
+    private static final String EMAIL_USERNAME = "mpirirwemoses2@gmail.com";
+    private static final String EMAIL_PASSWORD = "kjpp icia epse svwf"; // Replace with actual app password
+    private static final boolean EMAIL_ENABLED = true; // Enabled for live email sending
     
     public static void sendEmail(String to, String subject, String body) {
         if (!EMAIL_ENABLED) {
@@ -59,7 +59,7 @@ public class EmailService {
             "Congratulations! Your loan application (%s) has been approved.\n\n" +
             "Loan Details:\n" +
             "- Reference: %s\n" +
-            "- Amount: KES %,.2f\n\n" +
+            "- Amount: UGX %,.2f\n\n" +
             "Please visit the SACCO office to complete the disbursement process.\n\n" +
             "Best regards,\n" +
             "Kimwanyi SACCO Management",
@@ -87,7 +87,7 @@ public class EmailService {
         String body = String.format(
             "Dear %s,\n\n" +
             "This is a reminder that your loan (%s) is now %d days overdue.\n\n" +
-            "Outstanding Balance: KES %,.2f\n\n" +
+            "Outstanding Balance: UGX %,.2f\n\n" +
             "Please make arrangements to settle this loan as soon as possible to avoid additional penalties.\n\n" +
             "Contact us immediately if you are experiencing difficulties.\n\n" +
             "Best regards,\n" +
@@ -119,9 +119,9 @@ public class EmailService {
         String body = String.format(
             "Dear %s,\n\n" +
             "Here is your monthly savings statement:\n\n" +
-            "Current Balance: KES %,.2f\n" +
-            "Total Deposits This Month: KES %,.2f\n" +
-            "Total Withdrawals This Month: KES %,.2f\n\n" +
+            "Current Balance: UGX %,.2f\n" +
+            "Total Deposits This Month: UGX %,.2f\n" +
+            "Total Withdrawals This Month: UGX %,.2f\n\n" +
             "Thank you for banking with us!\n\n" +
             "Best regards,\n" +
             "Kimwanyi SACCO Management",

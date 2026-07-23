@@ -103,4 +103,5 @@ public class User {
     public void setMembershipNumber(String membershipNumber) { this.membershipNumber = membershipNumber; }
     public void setDateOfBirth(LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
     public void setStatus(AccountStatus status) { this.status = status; }
+    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
 }

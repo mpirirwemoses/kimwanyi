@@ -30,28 +30,28 @@ public class SavingsTransaction {
     private User member;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "transaction_type", nullable = false, length = 20)
     private TransactionType type;
 
     @Column(nullable = false, precision = 14, scale = 2)
     private BigDecimal amount;
 
-    @Column(nullable = false, precision = 14, scale = 2)
+    @Column(name = "balance_before", nullable = false, precision = 14, scale = 2)
     private BigDecimal balanceBefore;
 
-    @Column(nullable = false, precision = 14, scale = 2)
+    @Column(name = "balance_after", nullable = false, precision = 14, scale = 2)
     private BigDecimal balanceAfter;
 
-    @Column(length = 50)
+    @Column(name = "transaction_reference", length = 50)
     private String transactionReference;
 
-    @Column(length = 100)
+    @Column(name = "card_last_four", length = 100)
     private String cardLastFour;
 
-    @Column(length = 50)
+    @Column(name = "transaction_id", length = 50)
     private String transactionId;
 
-    @Column(nullable = false, updatable = false)
+    @Column(name = "transaction_date", nullable = false, updatable = false)
     private LocalDateTime transactionDate;
 
     @Column(length = 500)

@@ -500,6 +500,14 @@
                         <option value="SUSPENDED">Suspended</option>
                     </select>
                 </div>
+                <div class="form-group" id="passwordFields" style="display: none;">
+                    <label>Password <span id="passwordLabel">(leave blank to keep current)</span></label>
+                    <input type="password" id="memberPassword" placeholder="Enter new password">
+                </div>
+                <div class="form-group" id="confirmPasswordFields" style="display: none;">
+                    <label>Confirm Password</label>
+                    <input type="password" id="memberConfirmPassword" placeholder="Confirm new password">
+                </div>
                 <button type="submit" class="btn btn-success">Save Member</button>
                 <button type="button" class="btn" onclick="closeMemberModal()">Cancel</button>
             </form>
@@ -534,39 +542,53 @@
 
         function editMember(memberId) {
             // Fetch member data from server and populate form
-            showAddMemberModal();
             document.getElementById('memberModalTitle').textContent = 'Edit Member';
+            document.getElementById('passwordLabel').textContent = '(leave blank to keep current)';
+            document.getElementById('passwordFields').style.display = 'block';
+            document.getElementById('confirmPasswordFields').style.display = 'block';
             
-            // Create a form to fetch member data
-            const form = document.createElement('form');
-            form.method = 'POST';
-            form.action = contextPath + '/admin-dashboard';
-            
-            const actionInput = document.createElement('input');
-            actionInput.type = 'hidden';
-            actionInput.name = 'action';
-            actionInput.value = 'get-member';
-            
-            const memberIdInput = document.createElement('input');
-            memberIdInput.type = 'hidden';
-            memberIdInput.name = 'memberId';
-            memberIdInput.value = memberId;
-            
-            const sectionInput = document.createElement('input');
-            sectionInput.type = 'hidden';
-            sectionInput.name = 'section';
-            sectionInput.value = 'members';
-            
-            form.appendChild(actionInput);
-            form.appendChild(memberIdInput);
-            form.appendChild(sectionInput);
-            document.body.appendChild(form);
-            form.submit();
+            // Fetch member details via AJAX
+            fetch(contextPath + '/admin-dashboard?action=get-member&memberId=' + memberId + '&section=members')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const member = data.member;
+                        document.getElementById('memberId').value = member.id;
+                        document.getElementById('memberName').value = member.fullName;
+                        document.getElementById('memberEmail').value = member.email;
+                        document.getElementById('memberPhone').value = member.phoneNumber || '';
+                        document.getElementById('memberNationalId').value = member.nationalId;
+                        document.getElementById('memberAddress').value = member.physicalAddress || '';
+                        document.getElementById('memberStatus').value = member.status;
+                        document.getElementById('memberPassword').value = '';
+                        document.getElementById('memberConfirmPassword').value = '';
+                        document.getElementById('memberModal').classList.add('active');
+                    } else {
+                        alert('Failed to load member details: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching member:', error);
+                    alert('Error loading member details');
+                });
         }
 
         function saveMember(event) {
             event.preventDefault();
             const memberId = document.getElementById('memberId').value;
+            const password = document.getElementById('memberPassword').value;
+            const confirmPassword = document.getElementById('memberConfirmPassword').value;
+            
+            if (password && password !== confirmPassword) {
+                alert('Passwords do not match!');
+                return;
+            }
+            
+            if (password && password.length < 8) {
+                alert('Password must be at least 8 characters long!');
+                return;
+            }
+            
             const formData = {
                 action: memberId ? 'update-member' : 'add-member',
                 memberId: memberId,
@@ -578,6 +600,11 @@
                 status: document.getElementById('memberStatus').value,
                 section: 'members'
             };
+            
+            // Only include password if it's provided (for updates) or always for new members
+            if (password) {
+                formData.password = password;
+            }
             
             submitForm(contextPath + '/admin-dashboard', formData);
             closeMemberModal();

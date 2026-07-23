@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.config.HibernateUtil;
 import org.example.model.*;
+import org.example.security.PasswordUtil;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import org.hibernate.query.Query;
@@ -60,17 +61,53 @@ public class AdminServlet extends HttpServlet {
             }
             
             // Handle get-member action for member details
-            if ("get-member".equals(action) || "contact".equals(action)) {
+            if ("get-member".equals(action)) {
+                String memberId = request.getParameter("memberId");
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                
+                if (memberId == null || memberId.isEmpty()) {
+                    response.getWriter().write("{\"success\": false, \"error\": \"Member ID is required\"}");
+                    return;
+                }
+                
+                User member = session.find(User.class, Long.valueOf(memberId));
+                if (member != null) {
+                    String json = String.format(
+                        "{\"success\": true, \"member\": {" +
+                        "\"id\": %d," +
+                        "\"fullName\": \"%s\"," +
+                        "\"email\": \"%s\"," +
+                        "\"phoneNumber\": \"%s\"," +
+                        "\"nationalId\": \"%s\"," +
+                        "\"physicalAddress\": \"%s\"," +
+                        "\"status\": \"%s\"," +
+                        "\"membershipNumber\": \"%s\"" +
+                        "}}",
+                        member.getId(),
+                        escapeJson(member.getFullName()),
+                        escapeJson(member.getEmail()),
+                        escapeJson(member.getPhoneNumber()),
+                        escapeJson(member.getNationalId()),
+                        escapeJson(member.getPhysicalAddress()),
+                        member.getStatus(),
+                        escapeJson(member.getMembershipNumber())
+                    );
+                    response.getWriter().write(json);
+                } else {
+                    response.getWriter().write("{\"success\": false, \"error\": \"Member not found\"}");
+                }
+                return;
+            }
+            
+            if ("contact".equals(action)) {
                 String memberId = request.getParameter("memberId");
                 if (memberId != null) {
                     User member = session.find(User.class, Long.valueOf(memberId));
                     request.setAttribute("editMember", member);
                 }
-                
-                if ("contact".equals(action)) {
-                    request.getRequestDispatcher("/WEB-INF/views/admin-contact-member.jsp").forward(request, response);
-                    return;
-                }
+                request.getRequestDispatcher("/WEB-INF/views/admin-contact-member.jsp").forward(request, response);
+                return;
             }
             
             // Load the appropriate section
@@ -90,12 +127,17 @@ public class AdminServlet extends HttpServlet {
                 case "notifications":
                     loadNotifications(request, session);
                     break;
+                case "send-notification":
+                    loadMembers(request, session);
+                    request.getRequestDispatcher("/WEB-INF/views/send-notification.jsp").forward(request, response);
+                    return;
                 case "reports":
                     loadReports(request, session);
                     break;
                 case "audit":
                     loadAuditTrail(request, session);
-                    break;
+                    request.getRequestDispatcher("/WEB-INF/views/audit-trail.jsp").forward(request, response);
+                    return;
                 default:
                     loadDashboardStats(request, session);
                     break;
@@ -142,11 +184,11 @@ public class AdminServlet extends HttpServlet {
                 case "send-overdue-notifications":
                     sendOverdueNotifications(request, session);
                     break;
-                case "get-member":
-                    getMember(request, session);
-                    break;
                 case "generate-report":
                     generateReport(request, session, response);
+                    break;
+                case "process-loan-payment":
+                    processLoanPayment(request, session);
                     break;
                 default:
                     break;
@@ -211,10 +253,53 @@ public class AdminServlet extends HttpServlet {
     }
 
     private void loadLoans(HttpServletRequest request, Session session) {
-        List<Loan> loans = session.createQuery(
-                "select l from Loan l join fetch l.member order by l.appliedAt desc",
-                Loan.class).list();
+        String search = request.getParameter("search");
+        String statusFilter = request.getParameter("status");
+        int page = 1;
+        String pageParam = request.getParameter("page");
+        if (pageParam != null && !pageParam.isEmpty()) {
+            try { page = Integer.parseInt(pageParam); } catch (NumberFormatException ignored) {}
+        }
+        int pageSize = 10;
+        int offset = (page - 1) * pageSize;
+
+        StringBuilder queryBuilder = new StringBuilder("select l from Loan l join fetch l.member where 1=1");
+        Map<String, Object> params = new HashMap<>();
+
+        if (search != null && !search.trim().isEmpty()) {
+            String term = "%" + search.trim().toLowerCase() + "%";
+            request.setAttribute("search", search);
+            queryBuilder.append(" and (lower(l.member.fullName) like :term or lower(l.member.membershipNumber) like :term or lower(l.member.email) like :term or lower(l.loanReference) like :term)");
+            params.put("term", term);
+        }
+        if (statusFilter != null && !statusFilter.isEmpty()) {
+            queryBuilder.append(" and l.status = :status");
+            params.put("status", LoanStatus.valueOf(statusFilter));
+            request.setAttribute("statusFilter", statusFilter);
+        }
+
+        queryBuilder.append(" order by l.appliedAt desc");
+
+        var query = session.createQuery(queryBuilder.toString(), Loan.class);
+        params.forEach(query::setParameter);
+        query.setFirstResult(offset);
+        query.setMaxResults(pageSize);
+        List<Loan> loans = query.list();
+
+        var countQuery = session.createQuery("select count(l) from Loan l join l.member where 1=1" +
+                (search != null && !search.trim().isEmpty() ? " and (lower(l.member.fullName) like :term or lower(l.member.membershipNumber) like :term or lower(l.member.email) like :term or lower(l.loanReference) like :term)" : "") +
+                (statusFilter != null && !statusFilter.isEmpty() ? " and l.status = :status" : ""), Long.class);
+        if (search != null && !search.trim().isEmpty()) countQuery.setParameter("term", "%" + search.trim().toLowerCase() + "%");
+        if (statusFilter != null && !statusFilter.isEmpty()) countQuery.setParameter("status", LoanStatus.valueOf(statusFilter));
+        
+        Long totalResult = countQuery.uniqueResult();
+        long total = totalResult != null ? totalResult : 0L;
+        int totalPages = (int) Math.ceil(total / (double) pageSize);
+
         request.setAttribute("loans", loans);
+        request.setAttribute("currentPage", page);
+        request.setAttribute("totalPages", totalPages);
+        request.setAttribute("totalLoansCount", total);
     }
 
     private void loadOverdueLoans(HttpServletRequest request, Session session) {
@@ -281,9 +366,20 @@ public class AdminServlet extends HttpServlet {
     }
 
     private void loadAuditTrail(HttpServletRequest request, Session session) {
-        List<AuditLog> auditLogs = session.createQuery(
-                "from org.example.model.AuditLog order by timestamp desc",
-                AuditLog.class).list();
+        String filterModule = request.getParameter("module");
+        StringBuilder queryString = new StringBuilder("from org.example.model.AuditLog where 1=1");
+        Map<String, Object> params = new HashMap<>();
+        
+        if (filterModule != null && !filterModule.isEmpty()) {
+            queryString.append(" and action like :actionPattern");
+            params.put("actionPattern", filterModule.toUpperCase() + "%");
+            request.setAttribute("filterModule", filterModule);
+        }
+        
+        queryString.append(" order by timestamp desc");
+        var query = session.createQuery(queryString.toString(), AuditLog.class);
+        params.forEach(query::setParameter);
+        List<AuditLog> auditLogs = query.list();
         request.setAttribute("auditLogs", auditLogs);
     }
 
@@ -295,13 +391,14 @@ public class AdminServlet extends HttpServlet {
         String nationalId = request.getParameter("nationalId");
         String physicalAddress = request.getParameter("physicalAddress");
         String status = request.getParameter("status");
+        String password = request.getParameter("password");
 
         User user;
         if (memberId != null && !memberId.isEmpty()) {
             user = session.find(User.class, Long.valueOf(memberId));
             if (user == null) throw new IllegalArgumentException("Member not found");
         } else {
-            user = new User(fullName, email, "default123");
+            user = new User(fullName, email, PasswordUtil.hash(password != null && !password.isEmpty() ? password : "default123"));
             user.setRole(UserRole.MEMBER);
             user.setMembershipNumber("MEM-" + System.currentTimeMillis());
         }
@@ -313,6 +410,11 @@ public class AdminServlet extends HttpServlet {
         user.setPhysicalAddress(physicalAddress);
         user.setStatus(AccountStatus.valueOf(status));
 
+        // Update password only if provided (for updates) or if new member
+        if (memberId != null && !memberId.isEmpty() && password != null && !password.isEmpty()) {
+            user.setPasswordHash(PasswordUtil.hash(password));
+        }
+
         if (memberId == null || memberId.isEmpty()) {
             session.persist(user);
         } else {
@@ -320,7 +422,8 @@ public class AdminServlet extends HttpServlet {
         }
 
         // Create audit log
-        createAuditLog(session, user, "MEMBER_UPDATE", "Member " + fullName + " was " + (memberId == null ? "created" : "updated"));
+        createAuditLog(session, user, "MEMBER_UPDATE", "Member " + fullName + " was " + (memberId == null ? "created" : "updated") + 
+            (password != null && !password.isEmpty() ? " (password updated)" : ""));
     }
 
     private void deleteMember(HttpServletRequest request, Session session) {
@@ -334,6 +437,49 @@ public class AdminServlet extends HttpServlet {
         createAuditLog(session, user, "MEMBER_DELETE", "Member " + user.getFullName() + " was deactivated");
     }
 
+    private void processLoanPayment(HttpServletRequest request, Session session) {
+        Long loanId = Long.valueOf(request.getParameter("loanId"));
+        BigDecimal amount = new BigDecimal(request.getParameter("amount"));
+        String notes = request.getParameter("notes");
+        Long adminId = Long.valueOf(request.getSession(false).getAttribute("userId").toString());
+
+        Loan loan = session.find(Loan.class, loanId);
+        if (loan == null) throw new IllegalArgumentException("Loan not found");
+
+        User admin = session.find(User.class, adminId);
+
+        BigDecimal outstanding = loan.getOutstandingBalance();
+        if (outstanding == null || outstanding.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Loan has no outstanding balance to repay.");
+        }
+
+        BigDecimal paymentAmount = amount;
+        if (paymentAmount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Payment amount must be greater than zero.");
+        }
+        if (paymentAmount.compareTo(outstanding) > 0) {
+            paymentAmount = outstanding;
+        }
+
+        // Create payment record
+        Payment payment = new Payment(loan, loan.getMember(), paymentAmount, PaymentMethod.CASH, "CASH-" + System.currentTimeMillis());
+        payment.setNotes(notes != null ? notes : "Cash payment processed by admin");
+        session.persist(payment);
+
+        // Apply repayment
+        loan.repay(paymentAmount);
+        session.merge(loan);
+
+        // Audit
+        createAuditLog(session, admin, "LOAN_PAYMENT_PROCESSED",
+            "Cash payment of UGX " + paymentAmount + " processed for loan " + loan.getLoanReference() + ". Balance remaining: UGX " + loan.getOutstandingBalance());
+
+        // Notify member
+        sendLoanNotification(session, loan.getMember(), "Loan Payment Received",
+            "Your payment of UGX " + paymentAmount + " for loan " + loan.getLoanReference() + " has been received. "
+            + (loan.getStatus() == LoanStatus.REPAID ? "Loan is now fully repaid." : "Remaining balance: UGX " + loan.getOutstandingBalance()));
+    }
+
     private void approveLoan(HttpServletRequest request, Session session) {
         Long loanId = Long.valueOf(request.getParameter("loanId"));
         String comment = request.getParameter("comment");
@@ -343,14 +489,38 @@ public class AdminServlet extends HttpServlet {
         if (loan == null) throw new IllegalArgumentException("Loan not found");
 
         User admin = session.find(User.class, adminId);
+        User member = loan.getMember();
+        
+        // Check if member has overdue or overdue-status loans in history
+        List<Loan> memberLoans = session.createQuery(
+                "select l from Loan l where l.member.id = :memberId and (l.status in :overdueStatuses or (l.status = :approved and l.dueDate < :now))",
+                Loan.class)
+                .setParameter("memberId", member.getId())
+                .setParameter("overdueStatuses", List.of(LoanStatus.OVERDUE))
+                .setParameter("approved", LoanStatus.APPROVED)
+                .setParameter("now", LocalDateTime.now())
+                .list();
+        
+        if (!memberLoans.isEmpty()) {
+            long overdueCount = memberLoans.size();
+            StringBuilder history = new StringBuilder();
+            for (Loan l : memberLoans) {
+                history.append("Loan Ref: ").append(l.getLoanReference())
+                       .append(", Status: ").append(l.getStatus())
+                       .append(", Due: ").append(l.getDueDate())
+                       .append("; ");
+            }
+            throw new IllegalStateException("Cannot approve loan. Member has " + overdueCount + " loan(s) with overdue history: " + history);
+        }
+        
         loan.approve(admin, comment);
         session.merge(loan);
 
-        createAuditLog(session, admin, "LOAN_APPROVE", "Loan " + loan.getLoanReference() + " was approved");
+        createAuditLog(session, admin, "LOAN_APPROVE", "Loan " + loan.getLoanReference() + " was approved for member " + member.getFullName());
 
         // Send notification to member
         sendLoanNotification(session, loan.getMember(), "Loan Approved",
-                "Your loan application " + loan.getLoanReference() + " has been approved. Amount: KES " + loan.getTotalRepayable());
+                "Your loan application " + loan.getLoanReference() + " has been approved. Amount: UGX " + loan.getTotalRepayable());
     }
 
     private void rejectLoan(HttpServletRequest request, Session session) {
@@ -389,8 +559,20 @@ public class AdminServlet extends HttpServlet {
         String title = request.getParameter("title");
         String message = request.getParameter("message");
         String recipientType = request.getParameter("recipientType");
-        Long recipientId = request.getParameter("recipientId") != null ? Long.valueOf(request.getParameter("recipientId")) : null;
+        Long recipientId = null;
+        String recipientIdStr = request.getParameter("recipientId");
+        if (recipientIdStr != null && !recipientIdStr.trim().isEmpty()) {
+            try {
+                recipientId = Long.valueOf(recipientIdStr.trim());
+            } catch (NumberFormatException e) {
+                System.err.println("WARNING: Invalid recipientId format: '" + recipientIdStr + "'");
+            }
+        }
+        Long adminId = Long.valueOf(request.getSession(false).getAttribute("userId").toString());
+        User admin = session.find(User.class, adminId);
+        boolean sendEmail = "on".equals(request.getParameter("sendEmail"));
 
+        // Create in-app notification
         Notification notification = new Notification();
         notification.setTitle(title);
         notification.setMessage(message);
@@ -398,12 +580,72 @@ public class AdminServlet extends HttpServlet {
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
 
+        int emailCount = 0;
+        int recipientCount = 0;
+
         if (recipientId != null) {
             User recipient = session.find(User.class, recipientId);
             notification.setRecipient(recipient);
+            recipientCount = 1;
+            
+            // Send email to specific member
+            if (recipient != null && sendEmail) {
+                try {
+                    org.example.util.EmailService.sendEmail(
+                        recipient.getEmail(),
+                        title,
+                        message
+                    );
+                    emailCount++;
+                    System.out.println("SUCCESS: Email sent to " + recipient.getEmail());
+                } catch (Exception e) {
+                    System.err.println("ERROR: Failed to send email to " + recipient.getEmail() + ": " + e.getMessage());
+                }
+            }
+        } else {
+            List<User> recipients;
+            if ("ALL".equals(recipientType)) {
+                recipients = session.createQuery("from User where role = :role", User.class)
+                    .setParameter("role", UserRole.MEMBER)
+                    .list();
+            } else if ("ADMIN".equals(recipientType)) {
+                recipients = session.createQuery("from User where role = :role", User.class)
+                    .setParameter("role", UserRole.ADMIN)
+                    .list();
+            } else {
+                recipients = Collections.emptyList();
+            }
+            recipientCount = recipients.size();
+            
+            // Send emails to all recipients
+            if (sendEmail) {
+                for (User user : recipients) {
+                    try {
+                        org.example.util.EmailService.sendEmail(
+                            user.getEmail(),
+                            title,
+                            message
+                        );
+                        emailCount++;
+                        System.out.println("SUCCESS: Email sent to " + user.getEmail());
+                    } catch (Exception e) {
+                        System.err.println("ERROR: Failed to send email to " + user.getEmail() + ": " + e.getMessage());
+                    }
+                }
+            }
         }
 
         session.persist(notification);
+
+        // Audit log with detailed information
+        String details = "Notification '" + title + "' sent to " + recipientType + 
+            (recipientId != null ? " (Member ID: " + recipientId + ")" : " (" + recipientCount + " recipients)");
+        if (sendEmail) {
+            details += ". Emails sent: " + emailCount;
+        } else {
+            details += ". In-app only";
+        }
+        createAuditLog(session, admin, "NOTIFICATION_SENT", details);
     }
 
     private void sendOverdueNotifications(HttpServletRequest request, Session session) {
@@ -420,7 +662,7 @@ public class AdminServlet extends HttpServlet {
             long daysOverdue = ChronoUnit.DAYS.between(loan.getDueDate(), now);
             sendLoanNotification(session, loan.getMember(),
                     "Overdue Loan Alert",
-                    "Your loan " + loan.getLoanReference() + " is " + daysOverdue + " days overdue. Outstanding balance: KES " + loan.getOutstandingBalance());
+                    "Your loan " + loan.getLoanReference() + " is " + daysOverdue + " days overdue. Outstanding balance: UGX " + loan.getOutstandingBalance());
             sentCount++;
         }
 
@@ -436,6 +678,23 @@ public class AdminServlet extends HttpServlet {
         notification.setRead(false);
         notification.setCreatedAt(LocalDateTime.now());
         session.persist(notification);
+        
+        // Send email notification
+        if (member.getEmail() != null && !member.getEmail().isEmpty()) {
+            try {
+                org.example.util.EmailService.sendEmail(
+                    member.getEmail(),
+                    title,
+                    message
+                );
+                System.out.println("SUCCESS: Email sent to " + member.getEmail() + " | Subject: " + title);
+            } catch (Exception e) {
+                System.err.println("ERROR: Failed to send email to " + member.getEmail() + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("WARNING: Member " + member.getFullName() + " has no email address");
+        }
     }
 
     private void createAuditLog(Session session, User user, String action, String details) {
@@ -448,14 +707,13 @@ public class AdminServlet extends HttpServlet {
         session.persist(log);
     }
     
-    private void getMember(HttpServletRequest request, Session session) {
-        String memberId = request.getParameter("memberId");
-        if (memberId != null && !memberId.isEmpty()) {
-            User member = session.find(User.class, Long.valueOf(memberId));
-            if (member != null) {
-                request.setAttribute("editMember", member);
-            }
-        }
+    private String escapeJson(String value) {
+        if (value == null) return "";
+        return value.replace("\\", "\\\\")
+                    .replace("\"", "\\\"")
+                    .replace("\n", "\\n")
+                    .replace("\r", "")
+                    .replace("\t", "\\t");
     }
     
     private void generateReport(HttpServletRequest request, Session session, HttpServletResponse response) throws IOException {
@@ -472,14 +730,14 @@ public class AdminServlet extends HttpServlet {
                     .setParameter("status", SavingsStatus.ACTIVE)
                     .uniqueResult();
             if (totalSavings == null) totalSavings = BigDecimal.ZERO;
-            reportContent.append("Total Savings: KES ").append(totalSavings).append("\n");
+            reportContent.append("Total Savings: UGX ").append(totalSavings).append("\n");
             
             List<SavingsAccount> accounts = session.createQuery("from SavingsAccount", SavingsAccount.class).list();
             reportContent.append("Total Accounts: ").append(accounts.size()).append("\n\n");
             reportContent.append("Account Details:\n");
             for (SavingsAccount account : accounts) {
                 reportContent.append("- ").append(account.getAccountNumber())
-                    .append(": KES ").append(account.getBalance())
+                    .append(": UGX ").append(account.getBalance())
                     .append(" (").append(account.getMember().getFullName()).append(")\n");
             }
         } else if ("loans".equals(reportType)) {
@@ -493,7 +751,7 @@ public class AdminServlet extends HttpServlet {
                     .setParameter("status", LoanStatus.APPROVED)
                     .uniqueResult();
             if (totalLoanAmount == null) totalLoanAmount = BigDecimal.ZERO;
-            reportContent.append("Total Outstanding: KES ").append(totalLoanAmount).append("\n");
+            reportContent.append("Total Outstanding: UGX ").append(totalLoanAmount).append("\n");
         } else if ("members".equals(reportType)) {
             reportContent.append("=== MEMBERS REPORT ===\n\n");
             Long totalMembers = session.createQuery("select count(u) from User u where u.role = :role", Long.class)
@@ -533,22 +791,39 @@ public class AdminServlet extends HttpServlet {
             throw new IllegalArgumentException("Loan has no outstanding balance to repay.");
         }
 
+        // Use the amount from the form if provided, otherwise use full outstanding balance
+        BigDecimal paymentAmount = outstandingBalance;
+        String amountParam = request.getParameter("amount");
+        if (amountParam != null && !amountParam.trim().isEmpty()) {
+            try {
+                BigDecimal customAmount = new BigDecimal(amountParam);
+                if (customAmount.compareTo(BigDecimal.ZERO) > 0) {
+                    paymentAmount = customAmount;
+                    if (paymentAmount.compareTo(outstandingBalance) > 0) {
+                        paymentAmount = outstandingBalance;
+                    }
+                }
+            } catch (NumberFormatException e) {
+                // Use full outstanding balance if invalid amount
+            }
+        }
+
         // Create payment record for cash payment
-        Payment payment = new Payment(loan, loan.getMember(), outstandingBalance, PaymentMethod.CASH, "CASH-" + System.currentTimeMillis());
+        Payment payment = new Payment(loan, loan.getMember(), paymentAmount, PaymentMethod.CASH, "CASH-" + System.currentTimeMillis());
         payment.setNotes(notes != null ? notes : "Cash payment approved by admin");
         session.persist(payment);
 
         // Apply the repayment
-        loan.repay(outstandingBalance);
+        loan.repay(paymentAmount);
         session.merge(loan);
 
         createAuditLog(session, admin, "CASH_PAYMENT_APPROVED", 
-            "Cash payment of KES " + outstandingBalance + " approved for loan " + loan.getLoanReference());
+            "Cash payment of UGX " + paymentAmount + " approved for loan " + loan.getLoanReference());
 
         // Send notification to member
         sendLoanNotification(session, loan.getMember(), "Cash Payment Received",
-            "Your cash payment of KES " + outstandingBalance + " for loan " + loan.getLoanReference() + " has been received. " +
-            (loan.getStatus() == LoanStatus.REPAID ? "Loan fully repaid!" : "Remaining balance: KES " + loan.getOutstandingBalance()));
+            "Your cash payment of UGX " + paymentAmount + " for loan " + loan.getLoanReference() + " has been received. " +
+            (loan.getStatus() == LoanStatus.REPAID ? "Loan fully repaid!" : "Remaining balance: UGX " + loan.getOutstandingBalance()));
     }
 
     private void changeLoanStatus(HttpServletRequest request, Session session) {

@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS savings_accounts (
     account_number VARCHAR(30) UNIQUE NOT NULL,
     status VARCHAR(10) NOT NULL DEFAULT 'ACTIVE',
     balance DECIMAL(14,2) NOT NULL DEFAULT 0.00,
-    interest_rate DECIMAL(5,2) NOT NULL DEFAULT 6.00,
+    interest_rate DECIMAL(5,2) NOT NULL DEFAULT 5.00,
     total_deposits DECIMAL(14,2) NOT NULL DEFAULT 0.00,
     total_withdrawals DECIMAL(14,2) NOT NULL DEFAULT 0.00,
     total_interest_earned DECIMAL(14,2) NOT NULL DEFAULT 0.00,

@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="org.example.model.Loan" %>
 <%@ page import="org.example.model.LoanStatus" %>
 <%@ page import="java.math.BigDecimal" %>
@@ -85,15 +85,15 @@
                             <div class="loan-meta">
                                 <div>Member: <strong><%= loan.getMember().getFullName() %> (<%= loan.getMember().getEmail() %>)</strong></div>
                                 <div>Loan Reference: <strong><%= loan.getLoanReference() %></strong></div>
-                                <div>Requested amount: <strong>KES <%= loan.getRequestedAmount() %></strong></div>
+                                <div>Requested amount: <strong>UGX <%= loan.getRequestedAmount() %></strong></div>
                                 <div>Purpose: <strong><%= loan.getPurpose() %></strong></div>
                                 <div>Applied on: <strong><%= loan.getAppliedAtFormatted() %></strong></div>
                                 <div>Due date: <strong><%= loan.getDueDateFormatted() %></strong></div>
                                 <% if (loan.getTotalRepayable() != null) { %>
-                                    <div>Total repayable: <strong>KES <%= loan.getTotalRepayable() %></strong></div>
+                                    <div>Total repayable: <strong>UGX <%= loan.getTotalRepayable() %></strong></div>
                                 <% } %>
                                 <% if (outstanding != null) { %>
-                                    <div>Outstanding balance: <strong>KES <%= outstanding %></strong></div>
+                                    <div>Outstanding balance: <strong>UGX <%= outstanding %></strong></div>
                                 <% } %>
                                 <div class="days-overdue">⚠️ <%= daysOverdue %> days overdue</div>
                             </div>

@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
@@ -75,7 +75,7 @@
             <div class="stat-card">
                 <div class="icon">💰</div>
                 <h3>Total Savings</h3>
-                <div class="value">KES ${totalSavings}</div>
+                <div class="value">UGX ${totalSavings}</div>
             </div>
             <div class="stat-card">
                 <div class="icon">👥</div>
@@ -117,8 +117,8 @@
                                 <td>${account.member.fullName}</td>
                                 <td>${account.member.email}</td>
                                 <td>${account.member.phoneNumber}</td>
-                                <td><strong>KES ${account.balance}</strong></td>
-                                <td>KES ${account.totalDeposits}</td>
+                                <td><strong>UGX ${account.balance}</strong></td>
+                                <td>UGX ${account.totalDeposits}</td>
                                 <td>${account.interestRate}%</td>
                                 <td>
                                     <c:choose>

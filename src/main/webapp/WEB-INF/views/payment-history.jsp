@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="org.example.model.Payment" %>
 <%@ page import="org.example.model.PaymentMethod" %>
 <%@ page import="java.math.BigDecimal" %>
@@ -79,11 +79,11 @@
             </div>
             <div class="summary-card">
                 <div class="summary-label">Total Amount Paid</div>
-                <div class="summary-value">KES <%= java.text.NumberFormat.getNumberInstance().format(totalPaid) %></div>
+                <div class="summary-value">UGX <%= java.text.NumberFormat.getNumberInstance().format(totalPaid) %></div>
             </div>
             <div class="summary-card">
                 <div class="summary-label">Average Payment</div>
-                <div class="summary-value">KES <%= java.text.NumberFormat.getNumberInstance().format(paymentCount > 0 ? totalPaid.divide(new BigDecimal(paymentCount), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO) %></div>
+                <div class="summary-value">UGX <%= java.text.NumberFormat.getNumberInstance().format(paymentCount > 0 ? totalPaid.divide(new BigDecimal(paymentCount), 2, BigDecimal.ROUND_HALF_UP) : BigDecimal.ZERO) %></div>
             </div>
         </div>
 
@@ -137,7 +137,7 @@
                                             <%= methodIcon %> <%= methodLabel %>
                                         </span>
                                     </td>
-                                    <td class="amount">KES <%= payment.getAmount() %></td>
+                                    <td class="amount">UGX <%= payment.getAmount() %></td>
                                     <td><%= payment.getNotes() != null && !payment.getNotes().isEmpty() ? payment.getNotes() : "-" %></td>
                                 </tr>
                             <%

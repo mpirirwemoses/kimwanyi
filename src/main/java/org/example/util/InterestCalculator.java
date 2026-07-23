@@ -58,7 +58,7 @@ public class InterestCalculator {
         
         StringBuilder procedure = new StringBuilder();
         procedure.append("=== Simple Interest Calculation ===\n\n");
-        procedure.append(String.format("Principal (P): KES %,.2f\n", principal));
+        procedure.append(String.format("Principal (P): UGX %,.2f\n", principal));
         procedure.append(String.format("Annual Interest Rate (R): %,.2f%%\n", annualRate));
         procedure.append(String.format("Calculation Period: %s\n", periodType));
         procedure.append(String.format("Number of Periods (T): %d\n\n", periods));
@@ -66,9 +66,9 @@ public class InterestCalculator {
         procedure.append(String.format("Period Rate = %,.4f / %d / 100 = %,.4f\n\n", annualRate, getPeriodsPerYear(periodType), periodRate));
         procedure.append(String.format("Formula: Interest = P × Period Rate × T\n"));
         procedure.append(String.format("Interest = %,.2f × %,.4f × %d\n", principal, periodRate, periods));
-        procedure.append(String.format("Interest = KES %,.2f\n\n", interest));
+        procedure.append(String.format("Interest = UGX %,.2f\n\n", interest));
         procedure.append(String.format("Total Amount = Principal + Interest\n"));
-        procedure.append(String.format("Total Amount = %,.2f + %,.2f = KES %,.2f", principal, interest, total));
+        procedure.append(String.format("Total Amount = %,.2f + %,.2f = UGX %,.2f", principal, interest, total));
         
         return new InterestResult(principal, annualRate, interest, total, InterestType.SIMPLE, periods, procedure.toString());
     }
@@ -84,7 +84,7 @@ public class InterestCalculator {
         
         StringBuilder procedure = new StringBuilder();
         procedure.append("=== Compound Interest Calculation ===\n\n");
-        procedure.append(String.format("Principal (P): KES %,.2f\n", principal));
+        procedure.append(String.format("Principal (P): UGX %,.2f\n", principal));
         procedure.append(String.format("Annual Interest Rate (R): %,.2f%%\n", annualRate));
         procedure.append(String.format("Calculation Period: %s\n", periodType));
         procedure.append(String.format("Number of Periods (n): %d\n\n", periods));
@@ -94,9 +94,9 @@ public class InterestCalculator {
         procedure.append(String.format("Where: A = Total Amount, P = Principal, r = Period Rate, n = Periods\n\n"));
         procedure.append(String.format("Total Amount = %,.2f × (1 + %,.4f)^%d\n", principal, periodRate, periods));
         procedure.append(String.format("Total Amount = %,.2f × %,.6f\n", principal, compoundFactor));
-        procedure.append(String.format("Total Amount = KES %,.2f\n\n", total));
+        procedure.append(String.format("Total Amount = UGX %,.2f\n\n", total));
         procedure.append(String.format("Interest = Total Amount - Principal\n"));
-        procedure.append(String.format("Interest = %,.2f - %,.2f = KES %,.2f", total, principal, interest));
+        procedure.append(String.format("Interest = %,.2f - %,.2f = UGX %,.2f", total, principal, interest));
         
         return new InterestResult(principal, annualRate, interest, total, InterestType.COMPOUND, periods, procedure.toString());
     }

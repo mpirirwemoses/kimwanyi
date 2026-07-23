@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 <!DOCTYPE html>
@@ -86,19 +86,19 @@
             <div class="summary-cards">
                 <div class="summary-card">
                     <h3>Current Balance</h3>
-                    <div class="value">KES ${account.balance}</div>
+                    <div class="value">UGX ${account.balance}</div>
                 </div>
                 <div class="summary-card">
                     <h3>Total Deposits</h3>
-                    <div class="value">KES ${account.totalDeposits}</div>
+                    <div class="value">UGX ${account.totalDeposits}</div>
                 </div>
                 <div class="summary-card">
                     <h3>Total Withdrawals</h3>
-                    <div class="value">KES ${account.totalWithdrawals}</div>
+                    <div class="value">UGX ${account.totalWithdrawals}</div>
                 </div>
                 <div class="summary-card">
                     <h3>Interest Earned</h3>
-                    <div class="value">KES ${account.totalInterestEarned}</div>
+                    <div class="value">UGX ${account.totalInterestEarned}</div>
                 </div>
             </div>
 
@@ -130,10 +130,10 @@
                                             </span>
                                         </td>
                                         <td class="${tx.type == 'DEPOSIT' || tx.type == 'INTEREST' ? 'amount-positive' : 'amount-negative'}">
-                                            ${tx.type == 'DEPOSIT' || tx.type == 'INTEREST' ? '+' : '-'} KES ${tx.amount}
+                                            ${tx.type == 'DEPOSIT' || tx.type == 'INTEREST' ? '+' : '-'} UGX ${tx.amount}
                                         </td>
-                                        <td>KES ${tx.balanceBefore}</td>
-                                        <td><strong>KES ${tx.balanceAfter}</strong></td>
+                                        <td>UGX ${tx.balanceBefore}</td>
+                                        <td><strong>UGX ${tx.balanceAfter}</strong></td>
                                         <td>${tx.notes}</td>
                                     </tr>
                                 </c:forEach>
@@ -183,10 +183,10 @@
                     </div>
                     <div class="summary">
                         <h3>Account Summary</h3>
-                        <p>Current Balance: KES ${account.balance}</p>
-                        <p>Total Deposits: KES ${account.totalDeposits}</p>
-                        <p>Total Withdrawals: KES ${account.totalWithdrawals}</p>
-                        <p>Interest Earned: KES ${account.totalInterestEarned}</p>
+                        <p>Current Balance: UGX ${account.balance}</p>
+                        <p>Total Deposits: UGX ${account.totalDeposits}</p>
+                        <p>Total Withdrawals: UGX ${account.totalWithdrawals}</p>
+                        <p>Interest Earned: UGX ${account.totalInterestEarned}</p>
                     </div>
                     ${document.querySelector('.transactions-section').innerHTML}
                     <script>

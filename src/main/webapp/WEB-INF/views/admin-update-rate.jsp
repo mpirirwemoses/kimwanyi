@@ -74,7 +74,7 @@
                                min="0" 
                                max="100" 
                                required
-                               placeholder="Enter interest rate (e.g., 6.00)">
+                               placeholder="Enter interest rate (e.g., 5.00)">
                         <div class="help-text">Enter a value between 0 and 100. This will be applied to the account immediately.</div>
                     </div>
                     
@@ -90,10 +90,10 @@
                 <div class="info-box">
                     <p><strong>Account Number:</strong> ${viewAccount.accountNumber}</p>
                     <p><strong>Member:</strong> ${viewAccount.member.fullName}</p>
-                    <p><strong>Current Balance:</strong> KES ${viewAccount.balance}</p>
+                    <p><strong>Current Balance:</strong> UGX ${viewAccount.balance}</p>
                     <p><strong>Current Interest Rate:</strong> ${viewAccount.interestRate}% per annum</p>
-                    <p><strong>Total Deposits:</strong> KES ${viewAccount.totalDeposits}</p>
-                    <p><strong>Total Interest Earned:</strong> KES ${viewAccount.totalInterestEarned}</p>
+                    <p><strong>Total Deposits:</strong> UGX ${viewAccount.totalDeposits}</p>
+                    <p><strong>Total Interest Earned:</strong> UGX ${viewAccount.totalInterestEarned}</p>
                 </div>
             </div>
         </c:if>

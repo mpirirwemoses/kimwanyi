@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
@@ -65,7 +65,7 @@
         <c:if test="${not empty viewAccount}">
             <div class="balance-card">
                 <h2>Current Balance</h2>
-                <div class="amount">KES ${viewAccount.balance}</div>
+                <div class="amount">UGX ${viewAccount.balance}</div>
             </div>
 
             <div class="details-section">
@@ -96,23 +96,23 @@
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Total Deposits:</span>
-                    <span class="detail-value">KES ${viewAccount.totalDeposits}</span>
+                    <span class="detail-value">UGX ${viewAccount.totalDeposits}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Total Withdrawals:</span>
-                    <span class="detail-value">KES ${viewAccount.totalWithdrawals}</span>
+                    <span class="detail-value">UGX ${viewAccount.totalWithdrawals}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Total Interest Earned:</span>
-                    <span class="detail-value">KES ${viewAccount.totalInterestEarned}</span>
+                    <span class="detail-value">UGX ${viewAccount.totalInterestEarned}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Minimum Balance:</span>
-                    <span class="detail-value">KES ${viewAccount.minimumBalance}</span>
+                    <span class="detail-value">UGX ${viewAccount.minimumBalance}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Daily Withdrawal Limit:</span>
-                    <span class="detail-value">KES ${viewAccount.dailyWithdrawalLimit}</span>
+                    <span class="detail-value">UGX ${viewAccount.dailyWithdrawalLimit}</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Created At:</span>
