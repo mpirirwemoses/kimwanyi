@@ -7,15 +7,23 @@
     <session-factory>
         <!-- MySQL database named credit running on the local machine -->
         <property name="hibernate.connection.driver_class">com.mysql.cj.jdbc.Driver</property>
-        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/credit?useSSL=false&amp;serverTimezone=UTC</property>
+        <property name="hibernate.connection.url">jdbc:mysql://localhost:3306/credit?useSSL=false&amp;serverTimezone=UTC&amp;zeroDateTimeBehavior=CONVERT_TO_NULL</property>
         <property name="hibernate.connection.username">root</property>
         <property name="hibernate.connection.password"></property>
 
         <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+        <property name="hibernate.jdbc.time_zone">UTC</property>
+        <property name="hibernate.connection.provider_disables_autocommit">true</property>
         <property name="hibernate.hbm2ddl.auto">update</property>
         <property name="hibernate.show_sql">false</property>
         <property name="hibernate.format_sql">true</property>
 
         <mapping class="org.example.model.User"/>
+        <mapping class="org.example.model.Loan"/>
+        <mapping class="org.example.model.Payment"/>
+        <mapping class="org.example.model.SavingsAccount"/>
+        <mapping class="org.example.model.SavingsTransaction"/>
+        <mapping class="org.example.model.Notification"/>
+        <mapping class="org.example.model.AuditLog"/>
     </session-factory>
 </hibernate-configuration>
