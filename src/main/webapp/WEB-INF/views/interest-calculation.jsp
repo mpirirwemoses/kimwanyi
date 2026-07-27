@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -59,31 +60,31 @@
 
             <div class="calculation-card">
                 <h2>Projected Interest Earnings</h2>
-                <div class="amount">KES ${calculatedInterest}</div>
-                <div class="label">Monthly Interest at ${interestRate}% per annum</div>
+                <div class="amount">UGX <fmt:formatNumber value="${calculatedInterest}" minFractionDigits="2" maxFractionDigits="2" /></div>
+                <div class="label">Monthly Interest at <fmt:formatNumber value="${interestRate}" minFractionDigits="2" maxFractionDigits="2" />% per annum</div>
             </div>
 
             <div class="details-section">
                 <h3>Calculation Details</h3>
                 <div class="detail-row">
                     <span class="detail-label">Current Balance:</span>
-                    <span class="detail-value">KES ${currentBalance}</span>
+                    <span class="detail-value">UGX <fmt:formatNumber value="${currentBalance}" minFractionDigits="2" maxFractionDigits="2" /></span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Interest Rate:</span>
-                    <span class="detail-value">${interestRate}% per annum</span>
+                    <span class="detail-value"><fmt:formatNumber value="${interestRate}" minFractionDigits="2" maxFractionDigits="2" />% per annum</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Monthly Rate:</span>
-                    <span class="detail-value">${interestRate / 12}% per month</span>
+                    <span class="detail-value"><fmt:formatNumber value="${interestRate / 12}" minFractionDigits="2" maxFractionDigits="4" />% per month</span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Calculated Interest:</span>
-                    <span class="detail-value positive">+ KES ${calculatedInterest}</span>
+                    <span class="detail-value positive">+ UGX <fmt:formatNumber value="${calculatedInterest}" minFractionDigits="2" maxFractionDigits="2" /></span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Projected Balance After Interest:</span>
-                    <span class="detail-value positive">KES ${projectedBalance}</span>
+                    <span class="detail-value positive">UGX <fmt:formatNumber value="${projectedBalance}" minFractionDigits="2" maxFractionDigits="2" /></span>
                 </div>
                 <div class="detail-row">
                     <span class="detail-label">Last Interest Calculation:</span>
@@ -111,10 +112,10 @@
                     <code>
                         Monthly Interest = Current Balance × (Annual Rate ÷ 12 ÷ 100)<br><br>
                         Example:<br>
-                        Balance: KES ${currentBalance}<br>
-                        Annual Rate: ${interestRate}%<br>
-                        Monthly Rate: ${interestRate} ÷ 12 = ${interestRate / 12}%<br>
-                        Interest = ${currentBalance} × (${interestRate} ÷ 12 ÷ 100) = KES ${calculatedInterest}
+                        Balance: UGX <fmt:formatNumber value="${currentBalance}" minFractionDigits="2" maxFractionDigits="2" /><br>
+                        Annual Rate: <fmt:formatNumber value="${interestRate}" minFractionDigits="2" maxFractionDigits="2" />%<br>
+                        Monthly Rate: <fmt:formatNumber value="${interestRate}" minFractionDigits="2" maxFractionDigits="2" />% ÷ 12 = <fmt:formatNumber value="${interestRate / 12}" minFractionDigits="2" maxFractionDigits="4" />%<br>
+                        Interest = UGX <fmt:formatNumber value="${currentBalance}" minFractionDigits="2" maxFractionDigits="2" /> × (<fmt:formatNumber value="${interestRate}" minFractionDigits="2" maxFractionDigits="2" />% ÷ 12 ÷ 100) = UGX <fmt:formatNumber value="${calculatedInterest}" minFractionDigits="2" maxFractionDigits="2" />
                     </code>
                 </div>
             </div>
@@ -122,6 +123,7 @@
             <div class="action-buttons">
                 <a href="${pageContext.request.contextPath}/savings" class="btn btn-success">← Back to Savings</a>
                 <a href="${pageContext.request.contextPath}/savings?action=deposit" class="btn">➕ Make Deposit</a>
+                <a href="${pageContext.request.contextPath}/savings?action=withdraw" class="btn btn-warning">➖ Withdraw</a>
             </div>
         </c:if>
 

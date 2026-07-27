@@ -1,170 +1,227 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-    <title>Withdraw Funds - Kimwanyi SACCO</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Withdraw Funds | Kimwanyi SACCO</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: Arial, sans-serif; }
-        body { background-color: #f5f5f5; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 2px solid #2c3e50; }
-        .header h1 { color: #2c3e50; font-size: 28px; }
-        .nav-links a { margin-left: 15px; text-decoration: none; color: #3498db; font-weight: bold; }
-        .nav-links a:hover { color: #2980b9; }
-        .alert { padding: 12px; margin-bottom: 20px; border-radius: 4px; }
-        .alert-success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        .alert-error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .alert-warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        :root {
+            --gray-50: #fafafa; --gray-100: #f5f5f5; --gray-200: #e5e7eb; --gray-300: #d1d5db;
+            --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563; --gray-700: #374151;
+            --gray-800: #1f2937; --gray-900: #111827;
+            --green-500: #27ae60; --green-600: #229954; --green-50: #ecfdf5;
+            --sidebar-bg: #1e293b; --sidebar-hover: #334155;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 16px; line-height: 1.5; }
+        body { background-color: var(--gray-100); display: flex; min-height: 100vh; color: var(--gray-700); }
+        .sidebar { width: 260px; background: var(--sidebar-bg); color: white; padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto; }
+        .sidebar-header { padding: 0 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.1); margin-bottom: 20px; }
+        .sidebar-header h2 { font-size: 18px; font-weight: 700; }
+        .sidebar-header p { font-size: 13px; color: var(--gray-400); margin-top: 4px; }
+        .nav-menu { list-style: none; }
+        .nav-item { margin-bottom: 4px; }
+        .nav-link { display: flex; align-items: center; padding: 12px 20px; color: #e2e8f0; text-decoration: none; transition: all 0.2s; border-radius: 0 6px 6px 0; }
+        .nav-link:hover, .nav-link.active { background: var(--sidebar-hover); border-left: 3px solid var(--green-500); }
+        .nav-link .icon { margin-right: 10px; font-size: 17px; }
+        .nav-section { padding: 15px 20px 5px; font-size: 11px; text-transform: uppercase; color: var(--gray-400); font-weight: 600; letter-spacing: 0.5px; }
+        .main-content { flex: 1; margin-left: 260px; padding: 32px; overflow-y: auto; }
+        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; }
+        .page-header h1 { color: var(--gray-800); font-size: 26px; font-weight: 700; }
+        .user-info { display: flex; align-items: center; gap: 16px; }
+        .user-info span { color: var(--gray-500); font-size: 15px; }
+        .btn-logout { padding: 8px 18px; background: var(--gray-600); color: white; border-radius: 6px; font-size: 14px; border: none; cursor: pointer; transition: background 0.2s; }
+        .btn-logout:hover { background: var(--gray-700); }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; padding: 28px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px; }
+        .card-header { margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--gray-200); }
+        .card-header h2 { color: var(--gray-800); font-size: 20px; font-weight: 600; }
+        .alert { padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; }
+        .alert-success { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+        .alert-error { background-color: #fee2e2; color: #991b2b; border: 1px solid #fca5a5; }
+        .alert-warning { background-color: #fef9c3; color: #854d0e; border: 1px solid #fde047; }
         .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; margin-bottom: 8px; color: #2c3e50; font-weight: bold; }
-        .form-group input, .form-group select, .form-group textarea { 
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; 
-            font-size: 16px; transition: border-color 0.3s;
+        .form-group label { display: block; margin-bottom: 8px; color: var(--gray-700); font-weight: 600; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 12px 14px; border: 1px solid var(--gray-300); border-radius: 8px;
+            font-size: 15px; transition: border-color 0.2s; background: white;
         }
-        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { 
-            outline: none; border-color: #3498db; 
-        }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--green-500); }
         .form-group textarea { resize: vertical; min-height: 80px; }
-        .btn { 
-            display: inline-block; padding: 15px 30px; background: #e74c3c; color: white; 
-            text-decoration: none; border-radius: 6px; text-align: center; font-weight: bold; 
-            border: none; cursor: pointer; font-size: 16px; 
-        }
-        .btn:hover { background: #c0392b; }
-        .btn-secondary { background: #95a5a6; }
-        .btn-secondary:hover { background: #7f8c8d; }
-        .account-info { background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 25px; }
-        .account-info p { margin: 5px 0; color: #555; }
-        .account-info strong { color: #2c3e50; }
-        .balance-display { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 25px; text-align: center; }
-        .balance-display h3 { font-size: 14px; opacity: 0.9; margin-bottom: 10px; }
-        .balance-display .amount { font-size: 32px; font-weight: bold; }
-        .payment-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 20px; }
-        .payment-method { 
-            padding: 15px; border: 2px solid #ddd; border-radius: 6px; text-align: center; 
-            cursor: pointer; transition: all 0.3s;
-        }
-        .payment-method:hover { border-color: #3498db; }
-        .payment-method.selected { border-color: #e74c3c; background: #f8d7da; }
+        .btn { display: inline-block; padding: 14px 28px; background: var(--green-500); color: white; border-radius: 8px; font-weight: 600; border: none; cursor: pointer; font-size: 15px; transition: background 0.2s; }
+        .btn:hover { background: var(--green-600); }
+        .btn-secondary { background: var(--gray-500); }
+        .btn-secondary:hover { background: var(--gray-600); }
+        .account-info { background: var(--gray-50); padding: 18px; border-radius: 8px; margin-bottom: 24px; border: 1px solid var(--gray-200); }
+        .account-info p { margin: 6px 0; color: var(--gray-600); font-size: 14px; }
+        .account-info strong { color: var(--gray-800); font-weight: 600; }
+        .balance-card { background: linear-gradient(135deg, var(--green-500) 0%, var(--green-600) 100%); color: white; padding: 32px; border-radius: 12px; margin-bottom: 24px; text-align: center; }
+        .balance-card h3 { font-size: 15px; opacity: 0.9; margin-bottom: 12px; font-weight: 500; }
+        .balance-card .amount { font-size: 36px; font-weight: 700; }
+        .payment-methods { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .payment-method { padding: 20px; border: 2px solid var(--gray-200); border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s; }
+        .payment-method:hover { border-color: var(--green-500); }
+        .payment-method.selected { border-color: var(--green-500); background: var(--green-50); }
         .payment-method input { display: none; }
-        .payment-method label { cursor: pointer; font-weight: bold; color: #2c3e50; }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .payment-method label { cursor: pointer; font-weight: 600; color: var(--gray-700); display: block; margin-bottom: 6px; }
+        .payment-method .icon { font-size: 24px; margin-bottom: 6px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
-        .info-box { background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin-bottom: 20px; border-radius: 4px; }
-        .info-box p { margin: 5px 0; color: #555; }
-        .info-box strong { color: #1976d2; }
+        .form-fields { display: none; background: var(--gray-50); padding: 20px; border-radius: 8px; margin-top: 16px; border: 1px solid var(--gray-200); }
+        .form-fields.active { display: block; }
+        .info-box { background: var(--green-50); border-left: 4px solid var(--green-500); padding: 16px; margin-bottom: 24px; border-radius: 0 8px 8px 0; }
+        .info-box p { margin: 6px 0; color: var(--gray-600); font-size: 14px; }
+        .info-box strong { color: var(--green-600); font-weight: 600; }
+        @media (max-width: 768px) { .sidebar { width: 100%; position: relative; } .main-content { margin-left: 0; } }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
+    <aside class="sidebar">
+        <div class="sidebar-header"><h2>🏛️ Kimwanyi SACCO</h2><p>Member Portal</p></div>
+        <ul class="nav-menu">
+            <li class="nav-section">Main Menu</li>
+            <li class="nav-item"><a href="<%= request.getContextPath() %>/dashboard" class="nav-link"><span class="icon">📊</span> Dashboard</a></li>
+            <li class="nav-item"><a href="<%= request.getContextPath() %>/loans" class="nav-link"><span class="icon">📋</span> My Loans</a></li>
+            <li class="nav-item"><a href="<%= request.getContextPath() %>/payments?action=history" class="nav-link"><span class="icon">💳</span> Payment History</a></li>
+            <li class="nav-section">Services</li>
+            <li class="nav-item"><a href="<%= request.getContextPath() %>/loans?action=apply" class="nav-link"><span class="icon">➕</span> Apply for Loan</a></li>
+            <li class="nav-item"><a href="<%= request.getContextPath() %>/savings" class="nav-link"><span class="icon">💰</span> My Savings</a></li>
+            <li class="nav-item"><a href="<%= request.getContextPath() %>/savings?action=deposit" class="nav-link"><span class="icon">➕</span> Make Deposit</a></li>
+            <li class="nav-item"><a href="<%= request.getContextPath() %>/savings?action=withdraw" class="nav-link active"><span class="icon">➖</span> Withdraw</a></li>
+            <li class="nav-item"><a href="<%= request.getContextPath() %>/savings?action=calculate-interest" class="nav-link"><span class="icon">📈</span> Calculate Interest</a></li>
+            <li class="nav-section">System</li>
+            <li class="nav-item">
+                <form method="post" action="<%= request.getContextPath() %>/logout" style="display: inline;">
+                    <button type="submit" class="nav-link" style="width: 100%; border: none; background: none; cursor: pointer; text-align: left;">
+                        <span class="icon">🚪</span> Logout
+                    </button>
+                </form>
+            </li>
+        </ul>
+    </aside>
+    <main class="main-content">
+        <div class="page-header">
             <h1>➖ Withdraw Funds</h1>
-            <div class="nav-links">
-                <a href="${pageContext.request.contextPath}/savings">Back to Savings</a>
-                <a href="${pageContext.request.contextPath}/dashboard">Dashboard</a>
+            <div class="user-info">
+                <span>Welcome, <strong><%= session.getAttribute("fullName") %></strong></span>
+                <form method="post" action="<%= request.getContextPath() %>/logout" style="display: inline;">
+                    <button type="submit" class="btn-logout">Logout</button>
+                </form>
             </div>
         </div>
-
-        <c:if test="${not empty param.error}">
-            <div class="alert alert-error">${fn:replace(param.error, '+', ' ')}</div>
-        </c:if>
-
-        <c:if test="${not empty account}">
-            <div class="balance-display">
-                <h3>Available Balance</h3>
-                <div class="amount">KES ${account.balance}</div>
-            </div>
-
-            <div class="account-info">
-                <p><strong>Account Number:</strong> ${account.accountNumber}</p>
-                <p><strong>Account Holder:</strong> ${sessionScope.fullName}</p>
-                <p><strong>Account Status:</strong> ${account.status}</p>
-            </div>
-
-            <div class="info-box">
-                <p><strong>ℹ️ Important Information:</strong></p>
-                <p>• Minimum withdrawal amount: KES 100</p>
-                <p>• Maximum withdrawal amount: KES ${account.balance.subtract(account.minimumBalance)}</p>
-                <p>• Daily withdrawal limit: KES ${account.dailyWithdrawalLimit}</p>
-                <p>• Minimum balance to maintain: KES ${account.minimumBalance}</p>
-                <p>• Withdrawals are processed instantly</p>
-            </div>
-
-            <form method="POST" action="${pageContext.request.contextPath}/savings">
-                <input type="hidden" name="action" value="withdraw">
-                <input type="hidden" name="accountId" value="${account.id}">
-                
-                <div class="form-group">
-                    <label for="amount">Withdrawal Amount (KES) *</label>
-                    <input type="number" id="amount" name="amount" step="0.01" min="100" max="${account.balance}" required 
-                           placeholder="Enter amount to withdraw" autofocus>
+        <div class="container">
+            <c:if test="${not empty param.error}"><div class="alert alert-error">${fn:replace(param.error, '+', ' ')}</div></c:if>
+            <c:if test="${not empty account}">
+                <div class="balance-card">
+                    <h3>Available Balance</h3>
+                    <div class="amount">UGX ${account.balance}</div>
                 </div>
-
-                <div class="form-group">
-                    <label>Withdrawal Method *</label>
-                    <div class="payment-methods">
-                        <div class="payment-method">
-                            <input type="radio" id="mpesa" name="paymentMethod" value="MPESA" checked>
-                            <label for="mpesa">📱 M-Pesa</label>
+                <div class="account-info">
+                    <p><strong>Account Number:</strong> ${account.accountNumber}</p>
+                    <p><strong>Account Holder:</strong> ${sessionScope.fullName}</p>
+                    <p><strong>Account Status:</strong> ${account.status}</p>
+                </div>
+                <div class="info-box">
+                    <p><strong>ℹ️ Important Information:</strong></p>
+                    <p>• Minimum withdrawal amount: UGX 100</p>
+                    <c:if test="${not empty account.minimumBalance}">
+                        <p>• Maximum withdrawal amount: UGX ${account.balance.subtract(account.minimumBalance)}</p>
+                    </c:if>
+                    <c:if test="${not empty account.dailyWithdrawalLimit}">
+                        <p>• Daily withdrawal limit: UGX ${account.dailyWithdrawalLimit}</p>
+                    </c:if>
+                    <c:if test="${not empty account.minimumBalance}">
+                        <p>• Minimum balance to maintain: UGX ${account.minimumBalance}</p>
+                    </c:if>
+                    <p>• Withdrawals are processed instantly</p>
+                </div>
+                <div class="card">
+                    <div class="card-header"><h2>Withdrawal Details</h2></div>
+                    <form method="POST" action="${pageContext.request.contextPath}/savings">
+                        <input type="hidden" name="action" value="withdraw">
+                        <input type="hidden" name="accountId" value="${account.id}">
+                        <div class="form-group">
+                            <label for="amount">Withdrawal Amount (UGX) *</label>
+                            <input type="number" id="amount" name="amount" step="0.01" min="100" required placeholder="Enter amount to withdraw" autofocus>
                         </div>
-                        <div class="payment-method">
-                            <input type="radio" id="cash" name="paymentMethod" value="CASH">
-                            <label for="cash">💵 Cash</label>
+                        <div class="form-group">
+                            <label>Withdrawal Method *</label>
+                            <div class="payment-methods">
+                                <div class="payment-method" onclick="selectPaymentMethod(this, 'mpesa')">
+                                    <input type="radio" id="mpesa" name="paymentMethod" value="MPESA" checked>
+                                    <div class="icon">📱</div><label for="mpesa">M-Pesa</label>
+                                </div>
+                                <div class="payment-method" onclick="selectPaymentMethod(this, 'cash')">
+                                    <input type="radio" id="cash" name="paymentMethod" value="CASH">
+                                    <div class="icon">💵</div><label for="cash">Cash</label>
+                                </div>
+                                <div class="payment-method" onclick="selectPaymentMethod(this, 'bank')">
+                                    <input type="radio" id="bank" name="paymentMethod" value="BANK_TRANSFER">
+                                    <div class="icon">🏦</div><label for="bank">Bank Transfer</label>
+                                </div>
+                            </div>
                         </div>
-                        <div class="payment-method">
-                            <input type="radio" id="bank" name="paymentMethod" value="BANK_TRANSFER">
-                            <label for="bank">🏦 Bank Transfer</label>
+                        <div id="mpesaFields" class="form-fields active">
+                            <div class="form-group">
+                                <label for="mpesaPhone">Phone Number *</label>
+                                <input type="tel" id="mpesaPhone" name="mpesaPhone" value="<%= session.getAttribute("phoneNumber") != null ? session.getAttribute("phoneNumber") : "" %>" placeholder="e.g., 254712345678" maxlength="13">
+                            </div>
+                            <div class="form-group">
+                                <label for="transactionId">Transaction ID / Reference</label>
+                                <input type="text" id="transactionId" name="transactionId" placeholder="e.g., M-Pesa code or bank reference">
+                            </div>
                         </div>
-                        <div class="payment-method">
-                            <input type="radio" id="cheque" name="paymentMethod" value="CHEQUE">
-                            <label for="cheque">📝 Cheque</label>
+                        <div id="bankFields" class="form-fields">
+                            <div class="form-group">
+                                <label for="accountNumber">Account Number *</label>
+                                <input type="text" id="accountNumber" name="accountNumber" value="${account.accountNumber}" placeholder="Enter account number">
+                            </div>
+                            <div class="form-group">
+                                <label for="bankName">Bank Name *</label>
+                                <select id="bankName" name="bankName">
+                                    <option value="">Select Bank</option>
+                                    <option value="KCB">KCB Bank</option>
+                                    <option value="Equity">Equity Bank</option>
+                                    <option value="Coop">Co-operative Bank</option>
+                                    <option value="Barclays">Absa Bank</option>
+                                    <option value="Stanbic">Stanbic Bank</option>
+                                    <option value="NCBA">NCBA Bank</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="bankReference">Bank Reference Number *</label>
+                                <input type="text" id="bankReference" name="bankReference" placeholder="e.g., TXN123456789">
+                            </div>
                         </div>
-                    </div>
+                        <div class="form-group">
+                            <label for="notes">Notes (Optional)</label>
+                            <textarea id="notes" name="notes" placeholder="Add any additional notes about this withdrawal"></textarea>
+                        </div>
+                        <div style="display: flex; gap: 12px;">
+                            <button type="submit" class="btn">Confirm Withdrawal</button>
+                            <a href="${pageContext.request.contextPath}/savings?accountId=${account.id}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
                 </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="transactionId">Transaction ID / Reference</label>
-                        <input type="text" id="transactionId" name="transactionId" 
-                               placeholder="e.g., M-Pesa code or bank reference">
-                    </div>
-                    <div class="form-group">
-                        <label for="cardLastFour">Last 4 Digits (if card payment)</label>
-                        <input type="text" id="cardLastFour" name="cardLastFour" maxlength="4" 
-                               placeholder="XXXX">
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="notes">Notes (Optional)</label>
-                    <textarea id="notes" name="notes" placeholder="Add any additional notes about this withdrawal"></textarea>
-                </div>
-
-                <div style="display: flex; gap: 10px;">
-                    <button type="submit" class="btn">Confirm Withdrawal</button>
-                    <a href="${pageContext.request.contextPath}/savings" class="btn btn-secondary">Cancel</a>
-                </div>
-            </form>
-        </c:if>
-    </div>
-
+            </c:if>
+        </div>
+    </main>
     <script>
-        // Highlight selected payment method
-        document.querySelectorAll('.payment-method input').forEach(input => {
-            input.addEventListener('change', function() {
-                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
-                if (this.checked) {
-                    this.closest('.payment-method').classList.add('selected');
-                }
-            });
-        });
-        // Initialize first selection
-        document.querySelector('.payment-method input:checked').closest('.payment-method').classList.add('selected');
-        
-        // Set max attribute for amount input
-        document.getElementById('amount').max = '${account.balance}';
+        function selectPaymentMethod(element, method) {
+            document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+            element.classList.add('selected');
+            element.querySelector('input[type="radio"]').checked = true;
+            document.getElementById('mpesaFields').classList.remove('active');
+            document.getElementById('bankFields').classList.remove('active');
+            if (method === 'mpesa') document.getElementById('mpesaFields').classList.add('active');
+            else if (method === 'bank') document.getElementById('bankFields').classList.add('active');
+        }
+        if (document.querySelector('.payment-method input:checked')) {
+            document.querySelector('.payment-method input:checked').closest('.payment-method').classList.add('selected');
+        }
     </script>
 </body>
 </html>

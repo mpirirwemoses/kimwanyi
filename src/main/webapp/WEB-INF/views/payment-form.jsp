@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="org.example.model.Loan" %>
 <%@ page import="java.math.BigDecimal" %>
 <!doctype html>
@@ -65,11 +65,11 @@
                 </div>
                 <div class="summary-row">
                     <span>Total Repayable</span>
-                    <span>KES <%= loan.getTotalRepayable() %></span>
+                    <span>UGX <%= loan.getTotalRepayable() %></span>
                 </div>
                 <div class="summary-row">
                     <span>Outstanding Balance</span>
-                    <span style="color: #a33426; font-weight: 800;">KES <%= outstanding %></span>
+                    <span style="color: #a33426; font-weight: 800;">UGX <%= outstanding %></span>
                 </div>
                 <div class="summary-row">
                     <span>Due Date</span>
@@ -78,16 +78,16 @@
             </div>
 
             <div class="amount-display">
-                Paying: KES <%= request.getParameter("amount") != null ? request.getParameter("amount") : "0.00" %>
+                Paying: UGX <%= request.getParameter("amount") != null ? request.getParameter("amount") : "0.00" %>
             </div>
 
             <form method="post" action="<%= request.getContextPath() %>/payments" id="paymentForm">
                 <input type="hidden" name="loanId" value="<%= loan.getId() %>"/>
 
                 <div class="form-group">
-                    <label for="amount">Payment Amount (KES)</label>
+                    <label for="amount">Payment Amount (UGX)</label>
                     <input type="number" id="amount" name="amount" step="0.01" min="<%= minPayment %>" max="<%= outstanding %>" value="<%= request.getParameter("amount") != null ? request.getParameter("amount") : minPayment %>" required/>
-                    <small style="color: var(--muted); margin-top: 4px;">Minimum: KES <%= minPayment %> | Maximum: KES <%= outstanding %></small>
+                    <small style="color: var(--muted); margin-top: 4px;">Minimum: UGX <%= minPayment %> | Maximum: UGX <%= outstanding %></small>
                 </div>
 
                 <div class="form-group">
@@ -173,7 +173,7 @@
 
         amountInput.addEventListener('input', function() {
             const value = parseFloat(this.value) || 0;
-            amountDisplay.textContent = 'Paying: KES ' + value.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            amountDisplay.textContent = 'Paying: UGX ' + value.toLocaleString('en-KE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         });
     </script>
 </body>

@@ -59,6 +59,10 @@ public class AuthServlet extends HttpServlet {
             UserRole role = user.getRole() == null ? UserRole.MEMBER : user.getRole();
             request.getSession().setAttribute("userRole", role.name());
             request.getSession().setAttribute("userId", user.getId());
+            request.getSession().setAttribute("phoneNumber", user.getPhoneNumber() != null ? user.getPhoneNumber() : "");
+            request.getSession().setAttribute("fullName", user.getFullName());
+            request.getSession().setAttribute("email", user.getEmail());
+            request.getSession().setAttribute("nationalId", user.getNationalId() != null ? user.getNationalId() : "");
         }
         
         // Redirect based on user role

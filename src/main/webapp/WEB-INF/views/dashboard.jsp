@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <!doctype html>
 <html lang="en">
 <head>
@@ -26,7 +26,7 @@
         <section class="summary-grid" aria-label="Account overview">
             <article class="summary-card">
                 <span class="summary-label">Savings balance</span>
-                <strong>KES 0.00</strong>
+                <strong>UGX 0.00</strong>
                 <span class="summary-note">Your deposits will appear here.</span>
             </article>
             <article class="summary-card">

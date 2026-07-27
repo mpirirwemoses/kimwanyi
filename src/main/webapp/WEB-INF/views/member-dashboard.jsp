@@ -1,5 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="org.example.model.User" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <!doctype html>
 <html lang="en">
 <head>
@@ -28,7 +29,7 @@
         .page-header h1 { color: #2c3e50; font-size: 28px; }
         .user-info { display: flex; align-items: center; gap: 15px; }
         .user-info span { color: #555; }
-        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; }
+        .btn-logout { padding: 8px 16px; background: #e74c3c; color: white; text-decoration: none; border-radius: 4px; font-size: 14px; border: none; cursor: pointer; }
         .btn-logout:hover { background: #c0392b; }
 
         /* Stats Cards */
@@ -117,13 +118,28 @@
 
             <li class="nav-section">Services</li>
             <li class="nav-item">
-                <a href="<%= request.getContextPath() %>/loans" class="nav-link">
+                <a href="<%= request.getContextPath() %>/loans?action=apply" class="nav-link">
                     <span class="icon">➕</span> Apply for Loan
                 </a>
             </li>
             <li class="nav-item">
                 <a href="<%= request.getContextPath() %>/savings" class="nav-link">
                     <span class="icon">💰</span> My Savings
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<%= request.getContextPath() %>/savings?action=deposit" class="nav-link">
+                    <span class="icon">➕</span> Make Deposit
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<%= request.getContextPath() %>/savings?action=withdraw" class="nav-link">
+                    <span class="icon">➖</span> Withdraw
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="<%= request.getContextPath() %>/savings?action=calculate-interest" class="nav-link">
+                    <span class="icon">📈</span> Calculate Interest
                 </a>
             </li>
 
@@ -143,7 +159,7 @@
         <div class="page-header">
             <h1>Member Dashboard</h1>
             <div class="user-info">
-                <span>Welcome, <strong><%= request.getAttribute("safeUserName") %></strong></span>
+                <span>Welcome, <strong><c:out value="${safeUserName}" /></strong></span>
                 <form method="post" action="<%= request.getContextPath() %>/logout" style="display: inline;">
                     <button type="submit" class="btn-logout">Logout</button>
                 </form>
@@ -154,23 +170,28 @@
         <div class="stats-grid">
             <div class="stat-card info">
                 <div class="stat-label">Active Loans</div>
-                <div class="stat-value" id="activeLoans">0</div>
+                <div class="stat-value" id="activeLoans"><c:out value="${activeLoans}" /></div>
                 <div class="stat-change">Currently borrowing</div>
             </div>
             <div class="stat-card warning">
                 <div class="stat-label">Total Outstanding</div>
-                <div class="stat-value" id="totalOutstanding">KES 0</div>
+                <div class="stat-value" id="totalOutstanding">UGX <fmt:formatNumber value="${totalOutstanding}" minFractionDigits="2" maxFractionDigits="2" /></div>
                 <div class="stat-change">Amount to repay</div>
             </div>
             <div class="stat-card success">
                 <div class="stat-label">Savings Balance</div>
-                <div class="stat-value" id="savingsBalance">KES 0</div>
+                <div class="stat-value" id="savingsBalance">UGX <fmt:formatNumber value="${savingsBalance}" minFractionDigits="2" maxFractionDigits="2" /></div>
                 <div class="stat-change positive">Your savings</div>
             </div>
             <div class="stat-card danger">
                 <div class="stat-label">Next Due Date</div>
-                <div class="stat-value" id="nextDue" style="font-size: 20px;">-</div>
+                <div class="stat-value" id="nextDue" style="font-size: 20px;"><c:out value="${nextDue}" /></div>
                 <div class="stat-change">Upcoming payment</div>
+            </div>
+            <div class="stat-card success">
+                <div class="stat-label">Total Repaid</div>
+                <div class="stat-value" id="totalRepaid">UGX <fmt:formatNumber value="${totalRepaid}" minFractionDigits="2" maxFractionDigits="2" /></div>
+                <div class="stat-change positive">Amount repaid</div>
             </div>
         </div>
 
@@ -180,7 +201,7 @@
                 <h2>Quick Actions</h2>
             </div>
             <div class="quick-actions">
-                <a href="<%= request.getContextPath() %>/loans" class="action-btn">
+                <a href="<%= request.getContextPath() %>/loans?action=apply" class="action-btn">
                     <div class="action-icon">➕</div>
                     <span class="action-label">Apply for Loan</span>
                 </a>
@@ -196,6 +217,32 @@
                     <div class="action-icon">💰</div>
                     <span class="action-label">My Savings</span>
                 </a>
+            </div>
+        </div>
+
+        <!-- Savings Quick Actions -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2>Savings</h2>
+            </div>
+            <div class="quick-actions">
+                <a href="<%= request.getContextPath() %>/savings?action=deposit" class="action-btn">
+                    <div class="action-icon">➕</div>
+                    <span class="action-label">Make Deposit</span>
+                </a>
+                <a href="<%= request.getContextPath() %>/savings?action=withdraw" class="action-btn">
+                    <div class="action-icon">➖</div>
+                    <span class="action-label">Withdraw Funds</span>
+                </a>
+                <a href="<%= request.getContextPath() %>/savings?action=statement" class="action-btn">
+                    <div class="action-icon">📄</div>
+                    <span class="action-label">Account Statement</span>
+                </a>
+                <a href="<%= request.getContextPath() %>/savings?action=calculate-interest" class="action-btn">
+                    <div class="action-icon">📈</div>
+                    <span class="action-label">Calculate Interest</span>
+                </a>
+                
             </div>
         </div>
 
@@ -220,15 +267,41 @@
             loadDashboardData();
         });
 
+
+        function showChangeAccountNumberModal() {
+            const newAccountNumber = prompt("Enter new account number:");
+            if (newAccountNumber && newAccountNumber.trim() !== "") {
+                if (newAccountNumber.length > 30) {
+                    alert("Account number must be 30 characters or less.");
+                    return;
+                }
+                let form = document.createElement("form");
+                form.method = "POST";
+                form.action = "<%= request.getContextPath() %>/savings";
+                let actionInput = document.createElement("input");
+                actionInput.type = "hidden";
+                actionInput.name = "action";
+                actionInput.value = "change-account-number";
+                let accountNumberInput = document.createElement("input");
+                accountNumberInput.type = "hidden";
+                accountNumberInput.name = "newAccountNumber";
+                accountNumberInput.value = newAccountNumber.trim();
+                form.appendChild(actionInput);
+                form.appendChild(accountNumberInput);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
         function loadDashboardData() {
             fetch('<%= request.getContextPath() %>/api/dashboard-data')
                 .then(response => response.json())
                 .then(data => {
                     document.getElementById('activeLoans').textContent = data.activeLoans || 0;
-                    document.getElementById('totalOutstanding').textContent = 'KES ' + (data.totalOutstanding || 0).toLocaleString();
-                    document.getElementById('savingsBalance').textContent = 'KES ' + (data.savingsBalance || 0).toLocaleString();
+                    document.getElementById('totalOutstanding').textContent = 'UGX ' + (data.totalOutstanding || 0).toLocaleString();
+                    document.getElementById('savingsBalance').textContent = 'UGX ' + (data.savingsBalance || 0).toLocaleString();
                     document.getElementById('nextDue').textContent = data.nextDue || '-';
-                    document.getElementById('totalRepaid').textContent = 'KES ' + (data.totalRepaid || 0).toLocaleString();
+                    document.getElementById('totalRepaid').textContent = 'UGX ' + (data.totalRepaid || 0).toLocaleString();
 
                     const recentLoansContainer = document.getElementById('recentLoans');
                     if (data.recentLoans && data.recentLoans.length > 0) {
@@ -239,7 +312,7 @@
                                     '<div class="loan-meta">Applied: ' + new Date(loan.appliedAt).toLocaleDateString() + '</div>' +
                                 '</div>' +
                                 '<div class="loan-amount">' +
-                                    '<strong>KES ' + loan.amount.toLocaleString() + '</strong>' +
+                                    '<strong>UGX ' + loan.amount.toLocaleString() + '</strong>' +
                                     '<span class="status-badge status-' + loan.status.toLowerCase() + '">' + loan.status + '</span>' +
                                 '</div>' +
                             '</div>';
@@ -249,7 +322,7 @@
                             '<div class="empty-state">' +
                                 '<div class="empty-state-icon">📋</div>' +
                                 '<p>No loans yet.</p>' +
-                                '<p><a href="<%= request.getContextPath() %>/loans" style="color: #3498db;">Apply for your first loan</a></p>' +
+                                '<p><a href="<%= request.getContextPath() %>/loans?action=apply" style="color: #3498db;">Apply for your first loan</a></p>' +
                             '</div>';
                     }
                 })

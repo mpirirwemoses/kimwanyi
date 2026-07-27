@@ -8,12 +8,15 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.example.config.HibernateUtil;
 import org.example.model.Loan;
 import org.example.model.LoanStatus;
+import org.example.model.SavingsAccount;
+import org.example.model.SavingsStatus;
 import org.example.model.User;
 import org.example.util.InterestCalculator;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -29,17 +32,69 @@ public class LoanServlet extends HttpServlet {
         
         String action = request.getParameter("action");
         if ("apply".equals(action)) {
+            if (!isAdmin(request)) {
+                Long memberId = (Long) request.getSession(false).getAttribute("userId");
+                if (memberId != null) {
+                    try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+                        BigDecimal savingsBalance = session.createQuery(
+                            "select coalesce(sum(sa.balance), 0) from SavingsAccount sa where sa.member.id = :memberId and sa.status = :status",
+                            BigDecimal.class)
+                            .setParameter("memberId", memberId)
+                            .setParameter("status", SavingsStatus.ACTIVE)
+                            .uniqueResult();
+                        if (savingsBalance == null) savingsBalance = BigDecimal.ZERO;
+                        request.setAttribute("savingsBalance", savingsBalance.setScale(2, RoundingMode.HALF_UP));
+
+                        List<SavingsAccount> savingsAccounts = session.createQuery(
+                            "from SavingsAccount sa where sa.member.id = :memberId and sa.status = :status order by sa.accountNumber",
+                            SavingsAccount.class)
+                            .setParameter("memberId", memberId)
+                            .setParameter("status", SavingsStatus.ACTIVE)
+                            .list();
+                        request.setAttribute("savingsAccounts", savingsAccounts);
+                    }
+                }
+            }
             request.getRequestDispatcher("/WEB-INF/views/loan-application.jsp").forward(request, response);
             return;
         }
         
         boolean admin = isAdmin(request);
+        String statusFilter = request.getParameter("status");
+        String search = request.getParameter("search");
+        
+        System.out.println("DEBUG LoanServlet: statusFilter=" + statusFilter + ", search=" + search + ", admin=" + admin);
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
-            List<Loan> loans = admin
-                    ? session.createQuery("select l from Loan l join fetch l.member order by l.appliedAt desc", Loan.class).list()
-                    : session.createQuery("from Loan where member.id = :memberId order by appliedAt desc", Loan.class)
-                    .setParameter("memberId", userId).list();
+            StringBuilder queryBuilder = new StringBuilder("select l from Loan l join fetch l.member where 1=1");
+            java.util.Map<String, Object> params = new java.util.HashMap<>();
+            
+            if (!admin) {
+                queryBuilder.append(" and l.member.id = :memberId");
+                params.put("memberId", userId);
+            }
+            
+            if (statusFilter != null && !statusFilter.isEmpty()) {
+                queryBuilder.append(" and l.status = :statusEnum");
+                params.put("statusEnum", LoanStatus.valueOf(statusFilter));
+                System.out.println("DEBUG: Filtering by status: " + statusFilter);
+            }
+            
+            if (search != null && !search.trim().isEmpty()) {
+                String term = "%" + search.trim().toLowerCase() + "%";
+                queryBuilder.append(" and (lower(l.member.fullName) like :term or lower(l.loanReference) like :term or lower(l.purpose) like :term)");
+                params.put("term", term);
+            }
+            
+            queryBuilder.append(" order by l.appliedAt desc");
+            System.out.println("DEBUG: Query: " + queryBuilder.toString());
+            
+            var query = session.createQuery(queryBuilder.toString(), Loan.class);
+            params.forEach(query::setParameter);
+            List<Loan> loans = query.list();
+            
             request.setAttribute("loans", loans);
+            request.setAttribute("statusFilter", statusFilter);
+            request.setAttribute("search", search);
         }
         request.getRequestDispatcher(admin ? "/WEB-INF/views/admin-loans.jsp" : "/WEB-INF/views/member-loans.jsp").forward(request, response);
     }
@@ -112,24 +167,27 @@ public class LoanServlet extends HttpServlet {
     }
 
     private void validateLoanAmount(BigDecimal requested, User member) {
-        // Business rule: maximum loan amount is three times the member's current savings balance.
-        // If savings balance is not yet available (placeholder returning zero), fall back to a reasonable default maximum.
         BigDecimal savingsBalance = fetchSavingsBalance(member.getId());
         BigDecimal maxLoan;
         if (savingsBalance == null || savingsBalance.compareTo(BigDecimal.ZERO) == 0) {
-            // Fallback to a default maximum until the savings module is integrated
             maxLoan = DEFAULT_MAX_LOAN;
         } else {
             maxLoan = savingsBalance.multiply(new BigDecimal("3"));
         }
         if (requested.compareTo(maxLoan) > 0) {
-            throw new IllegalArgumentException("Requested loan exceeds the maximum allowed amount of KES " + maxLoan + ".");
+            throw new IllegalArgumentException("Requested loan exceeds the maximum allowed amount of UGX " + maxLoan + ".");
         }
     }
 
     private BigDecimal fetchSavingsBalance(Long memberId) {
-        // Placeholder for savings balance lookup. Returns zero until the savings module is integrated.
-        return BigDecimal.ZERO;
+        try (Session session = HibernateUtil.getSessionFactory().openSession()) {
+            return session.createQuery(
+                "select coalesce(sum(sa.balance), 0) from SavingsAccount sa where sa.member.id = :memberId and sa.status = :status",
+                BigDecimal.class)
+                .setParameter("memberId", memberId)
+                .setParameter("status", SavingsStatus.ACTIVE)
+                .uniqueResult();
+        }
     }
 
     private BigDecimal amount(HttpServletRequest request) {

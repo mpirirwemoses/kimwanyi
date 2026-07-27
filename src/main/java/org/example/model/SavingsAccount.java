@@ -40,7 +40,7 @@ public class SavingsAccount {
     private BigDecimal balance = BigDecimal.ZERO;
 
     @Column(nullable = false, precision = 5, scale = 2)
-    private BigDecimal interestRate = new BigDecimal("6.00");
+    private BigDecimal interestRate = new BigDecimal("5.00");
 
     @Column(precision = 14, scale = 2)
     private BigDecimal totalDeposits = BigDecimal.ZERO;

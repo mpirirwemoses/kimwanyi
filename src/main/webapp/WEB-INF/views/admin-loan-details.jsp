@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+﻿<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
 
@@ -66,7 +66,7 @@
         <c:if test="${not empty viewLoan}">
             <div class="amount-card">
                 <h2>Loan Amount</h2>
-                <div class="amount">KES ${viewLoan.requestedAmount}</div>
+                <div class="amount">UGX ${viewLoan.requestedAmount}</div>
             </div>
 
             <div class="details-section">
@@ -114,11 +114,11 @@
                     <h2>Repayment Information</h2>
                     <div class="detail-row">
                         <span class="detail-label">Total Repayable:</span>
-                        <span class="detail-value">KES ${viewLoan.totalRepayable}</span>
+                        <span class="detail-value">UGX ${viewLoan.totalRepayable}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Outstanding Balance:</span>
-                        <span class="detail-value">KES ${viewLoan.outstandingBalance}</span>
+                        <span class="detail-value">UGX ${viewLoan.outstandingBalance}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Due Date:</span>
@@ -146,6 +146,7 @@
             </c:if>
 
             <div class="action-buttons">
+                <a href="${pageContext.request.contextPath}/admin-dashboard?section=audit&module=loan" class="btn btn-info">📋 View Audit Trail</a>
                 <c:if test="${viewLoan.status == 'PENDING'}">
                     <form action="${pageContext.request.contextPath}/admin-dashboard" method="POST" style="display: inline;" onsubmit="return confirm('Approve this loan?')">
                         <input type="hidden" name="action" value="approve-loan">
@@ -162,15 +163,10 @@
                 </c:if>
                 
                 <c:if test="${viewLoan.status == 'APPROVED' || viewLoan.status == 'OVERDUE'}">
-                    <form action="${pageContext.request.contextPath}/admin-dashboard" method="POST" style="display: inline;" onsubmit="return confirm('Record cash payment for this loan?')">
-                        <input type="hidden" name="action" value="approve-cash-payment">
-                        <input type="hidden" name="loanId" value="${viewLoan.id}">
-                        <input type="hidden" name="section" value="loans">
-                        <button type="submit" class="btn btn-warning">💰 Approve Cash Payment</button>
-                    </form>
+                    <button type="button" class="btn btn-warning" onclick="showCashPaymentForm(${viewLoan.id})">Approve Cash Payment</button>
                 </c:if>
                 
-                <form action="${pageContext.request.contextPath}/admin-dashboard" method="POST" style="display: inline;" onsubmit="return confirm('Change loan status to ${fn:toUpperCase(param.newStatus)}?')">
+                <form action="${pageContext.request.contextPath}/admin-dashboard" method="POST" style="display: inline;" id="statusChangeForm" onsubmit="return confirmStatusChange()">
                     <input type="hidden" name="action" value="change-loan-status">
                     <input type="hidden" name="loanId" value="${viewLoan.id}">
                     <input type="hidden" name="section" value="loans">
@@ -206,6 +202,77 @@
                 <a href="${pageContext.request.contextPath}/admin-dashboard?section=loans" class="btn btn-secondary">← Back to Loans</a>
             </div>
         </c:if>
+</div>
+
+    <!-- Cash Payment Modal -->
+    <div id="cashPaymentModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:white; padding:30px; border-radius:8px; width:90%; max-width:500px; margin:auto; position:relative; top:50%; transform:translateY(-50%);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 style="color:#2c3e50; margin:0;">💰 Cash Payment</h3>
+                <button type="button" onclick="closeCashPaymentForm()" style="background:none; border:none; font-size:24px; cursor:pointer; color:#95a5a6;">&times;</button>
+            </div>
+            <form id="cashPaymentForm" action="${pageContext.request.contextPath}/admin-dashboard" method="POST" onsubmit="return confirmCashPayment(event)">
+                <input type="hidden" name="action" value="approve-cash-payment">
+                <input type="hidden" name="loanId" id="cashPaymentLoanId" value="">
+                <input type="hidden" name="section" value="loans">
+                
+                <div style="background:#f8f9fa; padding:15px; border-radius:6px; margin-bottom:20px;">
+                    <p style="margin:5px 0; color:#555;"><strong>Member:</strong> ${viewLoan.member.fullName}</p>
+                    <p style="margin:5px 0; color:#555;"><strong>Loan Reference:</strong> ${viewLoan.loanReference}</p>
+                    <p style="margin:5px 0; color:#555;"><strong>Outstanding:</strong> UGX ${viewLoan.outstandingBalance}</p>
+                </div>
+                
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; color:#555; font-weight:500;">Payment Amount (UGX) *</label>
+                    <input type="number" id="cashPaymentAmount" name="amount" step="0.01" 
+                           value="${viewLoan.outstandingBalance}" required
+                           style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px;">
+                </div>
+                
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; margin-bottom:5px; color:#555; font-weight:500;">Notes / Receipt Reference</label>
+                    <textarea id="cashPaymentNotes" name="notes" rows="3" 
+                              placeholder="Enter receipt number or notes about this cash payment..."
+                              style="width:100%; padding:10px; border:1px solid #ddd; border-radius:4px; font-size:14px; resize:vertical;">Cash payment received at SACCO office</textarea>
+                </div>
+                
+                <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:18px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeCashPaymentForm()">Cancel</button>
+                    <button type="submit" class="btn btn-warning">Confirm Cash Payment</button>
+                </div>
+            </form>
+        </div>
     </div>
+
+    <script>
+        function showCashPaymentForm(loanId) {
+            document.getElementById('cashPaymentLoanId').value = loanId;
+            document.getElementById('cashPaymentModal').style.display = 'block';
+        }
+
+        function closeCashPaymentForm() {
+            document.getElementById('cashPaymentModal').style.display = 'none';
+        }
+
+        function confirmCashPayment(event) {
+            var amount = document.getElementById('cashPaymentAmount').value;
+            if (!amount || parseFloat(amount) <= 0) {
+                alert('Please enter a valid payment amount greater than 0.');
+                event.preventDefault();
+                return false;
+            }
+            return confirm('Record cash payment of UGX ' + parseFloat(amount).toFixed(2) + ' for this loan?\n\nThis will create a payment record and update the loan balance.');
+        }
+
+        function confirmStatusChange() {
+            var select = document.getElementById('statusChangeSelect');
+            var newStatus = select.value;
+            if (!newStatus) {
+                alert('Please select a status to change to.');
+                return false;
+            }
+            return confirm('Change loan status to ' + newStatus.toUpperCase() + '?');
+        }
+    </script>
 </body>
 </html>

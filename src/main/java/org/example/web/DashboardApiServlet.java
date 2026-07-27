@@ -97,14 +97,15 @@ public class DashboardApiServlet extends HttpServlet {
                     }
                 }
                 
-                // Get savings data
-                SavingsAccount savingsAccount = session.createQuery(
-                    "select sa from SavingsAccount sa where sa.member.id = :memberId", 
-                    SavingsAccount.class)
+                // Get savings data - use aggregate sum to handle multiple accounts
+                BigDecimal savingsBalance = session.createQuery(
+                    "select coalesce(sum(sa.balance), 0) from SavingsAccount sa where sa.member.id = :memberId and sa.status = :status", 
+                    BigDecimal.class)
                     .setParameter("memberId", userId)
+                    .setParameter("status", SavingsStatus.ACTIVE)
                     .uniqueResult();
                 
-                BigDecimal savingsBalance = savingsAccount != null ? savingsAccount.getBalance() : BigDecimal.ZERO;
+                if (savingsBalance == null) savingsBalance = BigDecimal.ZERO;
                 
                 // Get recent loans (last 5)
                 List<Loan> recentLoans = loans.subList(0, Math.min(5, loans.size()));
